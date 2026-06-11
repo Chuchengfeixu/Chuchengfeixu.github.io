@@ -5,7 +5,7 @@ const Auth = {
 
   async init() {
     // 监听认证状态变化
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         this.currentUser = session.user;
         this.onLoginSuccess();
@@ -17,7 +17,7 @@ const Auth = {
     });
 
     // 检查当前会话
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
       this.currentUser = session.user;
       await this.loadProfile();
@@ -30,7 +30,7 @@ const Auth = {
 
   async loadProfile() {
     if (!this.currentUser) return;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', this.currentUser.id)
@@ -85,7 +85,7 @@ const Auth = {
 
   // 注册
   async register(email, password) {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
       email: email,
       password: password
     });
@@ -97,7 +97,7 @@ const Auth = {
 
   // 登录
   async login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email: email,
       password: password
     });
@@ -109,7 +109,7 @@ const Auth = {
 
   // 登出
   async logout() {
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
   },
 
   // 检查是否为 Pro 用户

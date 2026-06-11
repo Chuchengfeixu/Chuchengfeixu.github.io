@@ -151,29 +151,29 @@ function syncToCloud(action, table, id, data) {
     var dbData = toDB(table, data);
     dbData.id = id;
     dbData.user_id = userId;
-    supabase.from(table).insert(dbData).then(function(res) {
+    supabaseClient.from(table).insert(dbData).then(function(res) {
       if (res.error) console.error('[云端add]', table, res.error.message);
     });
     if (table === 'products' && data.fabricUsages && data.fabricUsages.length > 0) {
       var rows = data.fabricUsages.map(function(u) {
         return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: userId };
       });
-      supabase.from('product_fabrics').insert(rows).then(function(res) {
+      supabaseClient.from('product_fabrics').insert(rows).then(function(res) {
         if (res.error) console.error('[云端add product_fabrics]', res.error.message);
       });
     }
   } else if (action === 'update') {
     var dbData = toDB(table, data);
-    supabase.from(table).update(dbData).eq('id', id).then(function(res) {
+    supabaseClient.from(table).update(dbData).eq('id', id).then(function(res) {
       if (res.error) console.error('[云端update]', table, res.error.message);
     });
     if (table === 'products' && data.fabricUsages !== undefined) {
-      supabase.from('product_fabrics').delete().eq('product_id', id).then(function() {
+      supabaseClient.from('product_fabrics').delete().eq('product_id', id).then(function() {
         if (data.fabricUsages && data.fabricUsages.length > 0) {
           var rows = data.fabricUsages.map(function(u) {
             return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: getUserId() };
           });
-          supabase.from('product_fabrics').insert(rows).then(function(res) {
+          supabaseClient.from('product_fabrics').insert(rows).then(function(res) {
             if (res.error) console.error('[云端update product_fabrics]', res.error.message);
           });
         }
@@ -181,13 +181,13 @@ function syncToCloud(action, table, id, data) {
     }
   } else if (action === 'remove') {
     if (table === 'products') {
-      supabase.from('product_fabrics').delete().eq('product_id', id).then(function() {
-        supabase.from(table).delete().eq('id', id).then(function(res) {
+      supabaseClient.from('product_fabrics').delete().eq('product_id', id).then(function() {
+        supabaseClient.from(table).delete().eq('id', id).then(function(res) {
           if (res.error) console.error('[云端remove]', table, res.error.message);
         });
       });
     } else {
-      supabase.from(table).delete().eq('id', id).then(function(res) {
+      supabaseClient.from(table).delete().eq('id', id).then(function(res) {
         if (res.error) console.error('[云端remove]', table, res.error.message);
       });
     }
@@ -198,12 +198,12 @@ function syncToCloud(action, table, id, data) {
 async function loadFromCloud() {
   try {
     var results = await Promise.all([
-      supabase.from('fabrics').select('*').order('created_at', { ascending: false }),
-      supabase.from('products').select('*').order('created_at', { ascending: false }),
-      supabase.from('todos').select('*').order('sort_order', { ascending: true }),
-      supabase.from('patterns').select('*').order('created_at', { ascending: false }),
-      supabase.from('notions').select('*').order('created_at', { ascending: false }),
-      supabase.from('product_fabrics').select('*')
+      supabaseClient.from('fabrics').select('*').order('created_at', { ascending: false }),
+      supabaseClient.from('products').select('*').order('created_at', { ascending: false }),
+      supabaseClient.from('todos').select('*').order('sort_order', { ascending: true }),
+      supabaseClient.from('patterns').select('*').order('created_at', { ascending: false }),
+      supabaseClient.from('notions').select('*').order('created_at', { ascending: false }),
+      supabaseClient.from('product_fabrics').select('*')
     ]);
 
     var fabrics = (results[0].data || []).map(function(r) { return fromDB('fabrics', r); });
