@@ -1,10 +1,12 @@
-var CACHE_NAME = 'sewing-v1';
+var CACHE_NAME = 'sewing-v2';
 var URLS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './js/supabase-config.js',
+  './js/auth.js',
+  './js/auth-ui.js',
+  './js/data-layer.js'
 ];
 
 self.addEventListener('install', function(event) {
