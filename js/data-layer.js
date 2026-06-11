@@ -3,6 +3,9 @@
 (function() {
 'use strict';
 
+// 获取 supabase 客户端引用
+function getDB() { return window.supabaseClient; }
+
 var TABLE_MAP = {
   'sewing_fabrics': 'fabrics',
   'sewing_products': 'products',
@@ -151,29 +154,29 @@ function syncToCloud(action, table, id, data) {
     var dbData = toDB(table, data);
     dbData.id = id;
     dbData.user_id = userId;
-    supabaseClient.from(table).insert(dbData).then(function(res) {
+    getDB().from(table).insert(dbData).then(function(res) {
       if (res.error) console.error('[云端add]', table, res.error.message);
     });
     if (table === 'products' && data.fabricUsages && data.fabricUsages.length > 0) {
       var rows = data.fabricUsages.map(function(u) {
         return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: userId };
       });
-      supabaseClient.from('product_fabrics').insert(rows).then(function(res) {
+      getDB().from('product_fabrics').insert(rows).then(function(res) {
         if (res.error) console.error('[云端add product_fabrics]', res.error.message);
       });
     }
   } else if (action === 'update') {
     var dbData = toDB(table, data);
-    supabaseClient.from(table).update(dbData).eq('id', id).then(function(res) {
+    getDB().from(table).update(dbData).eq('id', id).then(function(res) {
       if (res.error) console.error('[云端update]', table, res.error.message);
     });
     if (table === 'products' && data.fabricUsages !== undefined) {
-      supabaseClient.from('product_fabrics').delete().eq('product_id', id).then(function() {
+      getDB().from('product_fabrics').delete().eq('product_id', id).then(function() {
         if (data.fabricUsages && data.fabricUsages.length > 0) {
           var rows = data.fabricUsages.map(function(u) {
             return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: getUserId() };
           });
-          supabaseClient.from('product_fabrics').insert(rows).then(function(res) {
+          getDB().from('product_fabrics').insert(rows).then(function(res) {
             if (res.error) console.error('[云端update product_fabrics]', res.error.message);
           });
         }
@@ -181,13 +184,13 @@ function syncToCloud(action, table, id, data) {
     }
   } else if (action === 'remove') {
     if (table === 'products') {
-      supabaseClient.from('product_fabrics').delete().eq('product_id', id).then(function() {
-        supabaseClient.from(table).delete().eq('id', id).then(function(res) {
+      getDB().from('product_fabrics').delete().eq('product_id', id).then(function() {
+        getDB().from(table).delete().eq('id', id).then(function(res) {
           if (res.error) console.error('[云端remove]', table, res.error.message);
         });
       });
     } else {
-      supabaseClient.from(table).delete().eq('id', id).then(function(res) {
+      getDB().from(table).delete().eq('id', id).then(function(res) {
         if (res.error) console.error('[云端remove]', table, res.error.message);
       });
     }
@@ -197,13 +200,14 @@ function syncToCloud(action, table, id, data) {
 // === 从云端加载所有数据 ===
 async function loadFromCloud() {
   try {
+    var db = getDB();
     var results = await Promise.all([
-      supabaseClient.from('fabrics').select('*').order('created_at', { ascending: false }),
-      supabaseClient.from('products').select('*').order('created_at', { ascending: false }),
-      supabaseClient.from('todos').select('*').order('sort_order', { ascending: true }),
-      supabaseClient.from('patterns').select('*').order('created_at', { ascending: false }),
-      supabaseClient.from('notions').select('*').order('created_at', { ascending: false }),
-      supabaseClient.from('product_fabrics').select('*')
+      db.from('fabrics').select('*').order('created_at', { ascending: false }),
+      db.from('products').select('*').order('created_at', { ascending: false }),
+      db.from('todos').select('*').order('sort_order', { ascending: true }),
+      db.from('patterns').select('*').order('created_at', { ascending: false }),
+      db.from('notions').select('*').order('created_at', { ascending: false }),
+      db.from('product_fabrics').select('*')
     ]);
 
     var fabrics = (results[0].data || []).map(function(r) { return fromDB('fabrics', r); });
