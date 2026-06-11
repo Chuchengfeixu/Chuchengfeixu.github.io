@@ -7625,11 +7625,20 @@ if ('serviceWorker' in navigator) {
 <script src="js/auth-ui.js"></script>
 <script src="js/data-layer.js"></script>
 <script>
+// 调试：确认脚本都加载成功
+console.log('[启动] supabase:', typeof supabase !== 'undefined' ? '已加载' : '未加载');
+console.log('[启动] Auth:', typeof Auth !== 'undefined' ? '已加载' : '未加载');
+console.log('[启动] AuthUI:', typeof AuthUI !== 'undefined' ? '已加载' : '未加载');
+console.log('[启动] DataLayer:', typeof DataLayer !== 'undefined' ? '已加载' : '未加载');
+console.log('[启动] Store.KEYS:', Store && Store.KEYS ? '正常' : '异常');
+
 // 初始化认证，登录后加载云端数据
 Auth.init().then(function() {
+  console.log('[启动] Auth.init 完成，开始绑定UI事件');
   AuthUI.init();
+  console.log('[启动] AuthUI.init 完成');
 }).catch(function(e) {
-  console.error('Auth init error:', e);
+  console.error('[启动] Auth init error:', e);
   AuthUI.init();
 });
 </script>
