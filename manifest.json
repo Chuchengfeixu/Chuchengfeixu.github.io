@@ -1,0 +1,24 @@
+{
+  "name": "缝纫信息管理系统",
+  "short_name": "缝纫管理",
+  "description": "个人缝纫布料、制品、纸样、辅料管理工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FAFBFF",
+  "theme_color": "#F472B6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
