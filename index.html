@@ -2253,6 +2253,173 @@ line-height: 1;
  color: var(--text-light);
  margin-top: 2px;
  }
+ /* ========== 手机端适配 ========== */
+ .mobile-header {
+ display: none;
+ position: fixed;
+ top: 0;
+ left: 0;
+ right: 0;
+ height: 50px;
+ background: #fff;
+ border-bottom: 1px solid var(--border);
+ z-index: 99;
+ align-items: center;
+ padding: 0 16px;
+ gap: 12px;
+ }
+
+ .mobile-menu-btn {
+ border: none;
+ background: none;
+ font-size: 22px;
+ cursor: pointer;
+ padding: 6px;
+ border-radius: 8px;
+ color: var(--text);
+ }
+
+ .mobile-menu-btn:hover {
+ background: var(--bg);
+ }
+
+ .mobile-header-title {
+ font-size: 16px;
+ font-weight: 700;
+ color: var(--text);
+ }
+
+ .sidebar-overlay {
+ display: none;
+ position: fixed;
+ top: 0;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ background: rgba(0,0,0,0.3);
+ z-index: 99;
+ }
+
+ .sidebar-overlay.show {
+ display: block;
+ }
+
+ @media (max-width: 768px) {
+ .mobile-header {
+ display: flex;
+ }
+
+ .sidebar {
+ transform: translateX(-100%);
+ transition: transform 0.25s ease;
+ z-index: 200;
+ }
+
+ .sidebar.open {
+ transform: translateX(0);
+ }
+
+ .main-content {
+ margin-left: 0 !important;
+ padding-top: 50px;
+ }
+
+ .page-wrapper {
+ padding: 16px 12px;
+ }
+
+ .page-title {
+ font-size: 20px;
+ margin-bottom: 14px;
+ }
+
+ /* 卡片网格改两列 */
+ .fabric-list,
+ .product-list,
+ .todo-list {
+ grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+ gap: 10px;
+ }
+
+ /* 工具栏换行 */
+ .fabric-toolbar,
+ .product-toolbar {
+ flex-wrap: wrap;
+ }
+
+ /* 表单弹窗全屏 */
+ .fabric-form-overlay,
+ .product-form-overlay,
+ .todo-form-overlay {
+ padding: 10px 8px;
+ }
+
+ .fabric-form-container,
+ .product-form-container {
+ max-width: 100%;
+ padding: 20px 16px;
+ border-radius: 14px;
+ }
+
+ /* 表单行单列 */
+ .form-row {
+ flex-direction: column;
+ gap: 0;
+ }
+
+ /* 待做列表添加表单 */
+ .todo-add-form {
+ flex-wrap: wrap;
+ }
+
+ .todo-add-form .todo-name-input,
+ .todo-add-form .todo-note-input {
+ flex: none;
+ width: 100%;
+ }
+
+ /* 看板 */
+ .dashboard-grid {
+ grid-template-columns: 1fr;
+ }
+
+ /* 打印小票 */
+ .print-slip-grid {
+ justify-content: center;
+ }
+
+ .print-slip {
+ width: 100%;
+ max-width: 12cm;
+ height: auto;
+ min-height: 6cm;
+ }
+
+ /* 列表视图滚动 */
+ .list-table {
+ overflow-x: auto;
+ }
+
+ .list-table-header,
+ .list-table-row {
+ min-width: 600px;
+ }
+
+ /* 登录页适配 */
+ .auth-container {
+ padding: 24px 16px;
+ margin: 20px 12px;
+ }
+ }
+
+ @media (max-width: 400px) {
+ .fabric-list,
+ .product-list,
+ .todo-list {
+ grid-template-columns: 1fr;
+ }
+ }
+
  </style>
 </head>
 <body>
@@ -2308,8 +2475,15 @@ line-height: 1;
  <!-- 应用主体 -->
  <div id="appMain" style="display:none;">
  <div class="app-layout">
+ <!-- 手机端顶栏 -->
+ <header class="mobile-header">
+ <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">☰</button>
+ <span class="mobile-header-title">🧵 缝纫管理</span>
+ </header>
+ <!-- 侧边栏遮罩 -->
+ <div class="sidebar-overlay" id="sidebarOverlay"></div>
  <!-- 侧边栏 -->
- <aside class="sidebar">
+ <aside class="sidebar" id="sidebar">
  <div class="sidebar-title">🧵 缝纫管理</div>
  <ul class="sidebar-nav">
  <li><a href="#home" data-page="home">🏠 主页</a></li>
@@ -7611,6 +7785,30 @@ ImageStore.init().then(function() {
  DataController.init();
  OptionManagerController.init();
  CardExpandState.init();
+
+ // 手机端菜单切换
+ var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+ var sidebar = document.getElementById('sidebar');
+ var sidebarOverlay = document.getElementById('sidebarOverlay');
+ if (mobileMenuBtn) {
+   mobileMenuBtn.addEventListener('click', function() {
+     sidebar.classList.toggle('open');
+     sidebarOverlay.classList.toggle('show');
+   });
+   sidebarOverlay.addEventListener('click', function() {
+     sidebar.classList.remove('open');
+     sidebarOverlay.classList.remove('show');
+   });
+   // 点击导航链接后自动关闭侧边栏
+   sidebar.querySelectorAll('.sidebar-nav a').forEach(function(link) {
+     link.addEventListener('click', function() {
+       if (window.innerWidth <= 768) {
+         sidebar.classList.remove('open');
+         sidebarOverlay.classList.remove('show');
+       }
+     });
+   });
+ }
  });
 });
 
