@@ -4,8 +4,8 @@
   "description": "个人缝纫布料、制品、纸样、辅料管理工具",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#FAFBFF",
-  "theme_color": "#F472B6",
+  "background_color": "#FFFFFF",
+  "theme_color": "#D4849A",
   "orientation": "any",
   "icons": [
     {

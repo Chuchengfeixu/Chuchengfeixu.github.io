@@ -2,13 +2,17 @@
 const Auth = {
   currentUser: null,
   currentProfile: null,
+  _initialized: false,
 
   async init() {
     // 监听认证状态变化
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        this.currentUser = session.user;
-        this.onLoginSuccess();
+        if (this._initialized) {
+          // 只在初始化之后的登录事件才触发（避免和 getSession 重复）
+          this.currentUser = session.user;
+          this.onLoginSuccess();
+        }
       } else if (event === 'SIGNED_OUT') {
         this.currentUser = null;
         this.currentProfile = null;
@@ -23,9 +27,11 @@ const Auth = {
       await this.loadProfile();
       try { await DataLayer.loadFromCloud(); } catch(e) { console.error('数据加载失败:', e); }
       this.showApp();
+      window.dispatchEvent(new Event('dataReady'));
     } else {
       this.showLoginPage();
     }
+    this._initialized = true;
   },
 
   async loadProfile() {
@@ -44,17 +50,8 @@ const Auth = {
     await this.loadProfile();
     try { await DataLayer.loadFromCloud(); } catch(e) { console.error('数据加载失败:', e); }
     this.showApp();
-    // 刷新所有页面数据
-    if (typeof FabricController !== 'undefined') {
-      try {
-        FabricController.renderList();
-        ProductController.renderList();
-        TodoController.renderList();
-        PatternController.renderList();
-        NotionController.renderList();
-        DashboardController.refresh();
-      } catch(e) { console.log('页面刷新延迟:', e); }
-    }
+    // 触发全局数据就绪事件，所有页面刷新
+    window.dispatchEvent(new Event('dataReady'));
     Toast.show('登录成功 👋', 'success');
   },
 

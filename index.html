@@ -6,7 +6,7 @@
  <title>缝纫信息管理系统</title>
  <!-- PWA -->
  <link rel="manifest" href="manifest.json">
- <meta name="theme-color" content="#F472B6">
+ <meta name="theme-color" content="#D4849A">
  <meta name="apple-mobile-web-app-capable" content="yes">
  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
  <meta name="apple-mobile-web-app-title" content="缝纫管理">
@@ -14,30 +14,35 @@
  <link rel="icon" type="image/png" href="icon-192.png">
  <style>
  :root {
- --pink: #F472B6;
- --pink-light: #FBCFE8;
- --purple: #A78BFA;
- --purple-dark: #7C3AED;
- --yellow: #FACC15;
- --yellow-light: #FEF9C3;
- --green: #4ADE80;
- --green-dark: #16A34A;
- --blue: #60A5FA;
- --blue-dark: #2563EB;
- --orange: #FB923C;
- --coral: #F87171;
- --teal: #2DD4BF;
- --teal-dark: #0D9488;
- --amber: #F59E0B;
- --amber-dark: #D97706;
- --bg: #FAFBFF;
+ --pink: #D4849A;
+ --pink-light: #F2DDE4;
+ --purple: #9B8AB8;
+ --purple-dark: #6B5B8A;
+ --yellow: #D4B86A;
+ --yellow-light: #F5EFD8;
+ --green: #7BAF8E;
+ --green-dark: #4A7A5C;
+ --blue: #7BA3C4;
+ --blue-dark: #4A7094;
+ --orange: #D49B6A;
+ --coral: #C97070;
+ --teal: #6BAFA3;
+ --teal-dark: #3D7A70;
+ --amber: #C4923A;
+ --amber-dark: #9A7030;
+ --bg: #FFFFFF;
  --bg-card: #FFFFFF;
- --text: #1E293B;
- --text-light: #64748B;
- --border: #E2E8F0;
- --shadow: 0 2px 12px rgba(0,0,0,0.06);
- --radius: 16px;
+ --bg-warm: #FAFAFA;
+ --bg-section: #F8F8F8;
+ --text: #2C2C2C;
+ --text-light: #7A7A7A;
+ --border: #E8E4DF;
+ --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+ --shadow-hover: 0 4px 16px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04);
+ --radius: 12px;
  --radius-sm: 8px;
+ --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+ --topbar-height: 56px;
  }
 
  * {
@@ -53,6 +58,8 @@
  min-height: 100vh;
  line-height: 1.7;
  letter-spacing: 0.01em;
+ -webkit-font-smoothing: antialiased;
+ -moz-osx-font-smoothing: grayscale;
  }
 
  /* Toast 样式 */
@@ -68,14 +75,15 @@
 
  .toast {
  padding: 12px 20px;
- border-radius: 12px;
+ border-radius: 10px;
  color: #fff;
- font-size: 14px;
- box-shadow: var(--shadow);
+ font-size: 13.5px;
+ box-shadow: 0 4px 16px rgba(0,0,0,0.1);
  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
  max-width: 320px;
  backdrop-filter: blur(10px);
  -webkit-backdrop-filter: blur(10px);
+ font-weight: 500;
  }
 
  .toast-success { background: var(--green-dark); }
@@ -100,7 +108,7 @@
 
  .sidebar {
  width: 200px;
- background: #fff;
+ background: #FAFAFA;
  border-right: 1px solid var(--border);
  display: flex;
  flex-direction: column;
@@ -109,74 +117,78 @@
  left: 0;
  bottom: 0;
  z-index: 100;
- padding: 20px 12px;
+ padding: 20px 10px;
  overflow-y: auto;
  }
 
  .sidebar-title {
- font-size: 16px;
+ font-size: 15px;
  font-weight: 700;
  color: var(--text);
- padding: 0 8px 16px;
+ padding: 0 10px 18px;
  border-bottom: 1px solid var(--border);
- margin-bottom: 12px;
+ margin-bottom: 14px;
+ letter-spacing: 0.02em;
+ cursor: pointer;
  }
 
  .sidebar-nav {
  list-style: none;
  display: flex;
  flex-direction: column;
- gap: 4px;
+ gap: 2px;
  flex: 1;
  }
 
  .sidebar-nav a {
  display: flex;
  align-items: center;
- gap: 8px;
+ gap: 10px;
  text-decoration: none;
- padding: 10px 12px;
+ padding: 10px 14px;
  border-radius: 10px;
- font-size: 14px;
+ font-size: 13.5px;
  font-weight: 500;
  color: var(--text-light);
- transition: background 0.15s, color 0.15s;
+ transition: all var(--transition);
+ border: 1px solid transparent;
  }
 
  .sidebar-nav a:hover {
- background: var(--bg);
+ background: rgba(0,0,0,0.03);
  color: var(--text);
  }
 
  .sidebar-nav a.active {
- background: var(--bg);
+ background: #fff;
  color: var(--text);
  font-weight: 600;
+ box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+ border-color: var(--border);
  }
 
- .sidebar-nav li:nth-child(1) a.active { border-left: 3px solid var(--blue); }
- .sidebar-nav li:nth-child(2) a.active { border-left: 3px solid var(--pink); }
- .sidebar-nav li:nth-child(3) a.active { border-left: 3px solid var(--purple); }
- .sidebar-nav li:nth-child(4) a.active { border-left: 3px solid var(--teal); }
- .sidebar-nav li:nth-child(5) a.active { border-left: 3px solid var(--amber); }
- .sidebar-nav li:nth-child(6) a.active { border-left: 3px solid var(--green); }
- .sidebar-nav li:nth-child(7) a.active { border-left: 3px solid var(--blue); }
- .sidebar-nav li:nth-child(8) a.active { border-left: 3px solid var(--orange); }
+ .sidebar-nav li:nth-child(1) a.active { border-left: 3px solid var(--pink); padding-left: 11px; }
+ .sidebar-nav li:nth-child(2) a.active { border-left: 3px solid var(--purple); padding-left: 11px; }
+ .sidebar-nav li:nth-child(3) a.active { border-left: 3px solid var(--teal); padding-left: 11px; }
+ .sidebar-nav li:nth-child(4) a.active { border-left: 3px solid var(--amber); padding-left: 11px; }
+ .sidebar-nav li:nth-child(5) a.active { border-left: 3px solid var(--green); padding-left: 11px; }
+ .sidebar-nav li:nth-child(6) a.active { border-left: 3px solid var(--blue); padding-left: 11px; }
+ .sidebar-nav li:nth-child(7) a.active { border-left: 3px solid var(--orange); padding-left: 11px; }
 
  .sidebar-actions {
  border-top: 1px solid var(--border);
- padding-top: 12px;
- margin-top: 12px;
+ padding-top: 14px;
+ margin-top: 14px;
  display: flex;
  flex-direction: column;
- gap: 4px;
+ gap: 2px;
  }
 
  .sidebar-actions .btn-data {
  display: flex;
  align-items: center;
  gap: 8px;
- padding: 8px 12px;
+ padding: 9px 14px;
  border: none;
  border-radius: 10px;
  font-size: 13px;
@@ -184,12 +196,12 @@
  cursor: pointer;
  background: none;
  color: var(--text-light);
- transition: background 0.15s, color 0.15s;
+ transition: all var(--transition);
  text-align: left;
  }
 
  .sidebar-actions .btn-data:hover {
- background: var(--bg);
+ background: rgba(0,0,0,0.03);
  color: var(--text);
  }
 
@@ -197,30 +209,52 @@
  margin-left: 200px;
  flex: 1;
  min-height: 100vh;
+ background: var(--bg);
  }
 
  /* 页面容器 */
  .page { display: none; }
- .page.active { display: block; animation: pageIn 0.3s ease; }
+ .page.active { display: block; animation: pageIn 0.25s ease; }
 
  @keyframes pageIn {
- from { opacity: 0; transform: translateY(8px); }
+ from { opacity: 0; transform: translateY(4px); }
  to { opacity: 1; transform: translateY(0); }
  }
 
+ /* 顶部栏 */
+ .topbar {
+ height: var(--topbar-height);
+ background: #fff;
+ border-bottom: 1px solid var(--border);
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ padding: 0 24px;
+ position: sticky;
+ top: 0;
+ z-index: 50;
+ }
+
+ .topbar-title {
+ font-size: 16px;
+ font-weight: 600;
+ color: var(--text);
+ }
+
+ .topbar-actions {
+ display: flex;
+ align-items: center;
+ gap: 12px;
+ }
+
  .page-wrapper {
- max-width: 1100px;
+ max-width: 1200px;
  margin: 0 auto;
- padding: 24px 16px;
+ padding: 24px 28px;
  }
 
  .page-title {
- font-size: 24px;
- font-weight: 700;
- margin-bottom: 20px;
- padding-bottom: 10px;
- border-bottom: 3px solid var(--border);
- color: var(--text);
+ display: none;
  }
 
  #page-fabric .page-title { border-bottom-color: var(--pink); }
@@ -238,25 +272,27 @@
  border: 1px solid var(--border);
  border-radius: 8px;
  overflow: hidden;
+ background: var(--bg-warm);
  }
 
  .view-toggle-btn {
- padding: 6px 10px;
+ padding: 6px 12px;
  border: none;
  background: none;
  cursor: pointer;
- font-size: 16px;
+ font-size: 15px;
  color: var(--text-light);
- transition: background 0.15s, color 0.15s;
+ transition: all var(--transition);
  }
 
  .view-toggle-btn.active {
- background: var(--bg);
+ background: var(--bg-card);
  color: var(--text);
+ box-shadow: 0 1px 3px rgba(0,0,0,0.06);
  }
 
  .view-toggle-btn:hover:not(.active) {
- background: #f8f9fa;
+ color: var(--text);
  }
 
  /* 布料管理页面样式 */
@@ -269,37 +305,39 @@
  }
 
  .btn {
- padding: 8px 20px;
+ padding: 9px 22px;
  border: none;
- border-radius: 24px;
- font-size: 14px;
+ border-radius: 10px;
+ font-size: 13.5px;
  font-weight: 600;
  cursor: pointer;
- transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+ transition: all var(--transition);
+ letter-spacing: 0.01em;
  }
 
  .btn:hover {
  transform: translateY(-1px);
- box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+ box-shadow: var(--shadow-hover);
  }
 
  .btn:active {
  transform: translateY(0);
- box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+ box-shadow: var(--shadow);
  }
 
  .btn-pink {
- background: linear-gradient(135deg, #F472B6, #EC4899);
+ background: var(--pink);
  color: #fff;
  }
 
  .btn-pink:hover {
- background: linear-gradient(135deg, #FBCFE8, #F472B6);
+ background: #C4748A;
  }
 
  .btn-gray {
- background: var(--border);
+ background: var(--bg);
  color: var(--text);
+ border: 1px solid var(--border);
  }
 
  .btn-danger {
@@ -336,40 +374,82 @@
  
  .fabric-list {
  display: grid;
- grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
- gap: 12px;
+ grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+ gap: 14px;
  }
 
  .fabric-card {
- background: var(--bg-card);
+ background: #fff;
  border-radius: var(--radius);
- box-shadow: var(--shadow);
- padding: 12px;
- transition: transform 0.2s, box-shadow 0.2s;
- border-top: 3px solid var(--pink);
+ box-shadow: none;
+ padding: 0;
+ transition: all var(--transition);
+ border: 1px solid var(--border);
+ border-top: none;
+ overflow: hidden;
+ display: flex;
+ flex-direction: column;
  }
 
  .fabric-card:hover {
- transform: translateY(-3px);
- box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+ transform: translateY(-2px);
+ box-shadow: var(--shadow-hover);
+ }
+
+ .fabric-card-image {
+ width: 100%;
+ height: 160px;
+ object-fit: cover;
+ background: #F5F4F2;
+ display: block;
+ }
+
+ .fabric-card-image-placeholder {
+ width: 100%;
+ height: 160px;
+ background: linear-gradient(135deg, var(--pink-light) 0%, #F0ECF5 100%);
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ font-size: 32px;
+ color: var(--pink);
+ }
+
+ .fabric-card-info {
+ padding: 12px;
+ display: flex;
+ flex-direction: column;
+ gap: 6px;
+ flex: 1;
  }
 
  .fabric-card-header {
  display: flex;
  justify-content: space-between;
- align-items: flex-start;
- margin-bottom: 10px;
+ align-items: center;
+ margin-bottom: 4px;
  }
 
  .fabric-card-name {
- font-size: 13px;
- font-weight: 700;
+ font-size: 14px;
+ font-weight: 600;
  color: var(--text);
+ line-height: 1.4;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ white-space: nowrap;
  }
 
  .fabric-card-actions {
  display: flex;
  gap: 2px;
+ flex-shrink: 0;
+ opacity: 0;
+ transition: opacity var(--transition);
+ }
+
+ .fabric-card:hover .fabric-card-actions {
+ opacity: 1;
  }
 
  .fabric-card-body {
@@ -426,7 +506,9 @@
  left: 0;
  right: 0;
  bottom: 0;
- background: rgba(0,0,0,0.35);
+ background: rgba(30,30,30,0.25);
+ backdrop-filter: blur(4px);
+ -webkit-backdrop-filter: blur(4px);
  z-index: 200;
  justify-content: center;
  align-items: flex-start;
@@ -440,12 +522,13 @@
 
  .fabric-form-container {
  background: var(--bg-card);
- border-radius: 20px;
- box-shadow: 0 8px 32px rgba(0,0,0,0.18);
- padding: 28px;
+ border-radius: 18px;
+ box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+ padding: 32px;
  width: 100%;
  max-width: 520px;
  animation: formSlideIn 0.3s ease;
+ border: 1px solid var(--border);
  }
 
  @keyframes formSlideIn {
@@ -480,19 +563,19 @@
  .form-group input,
  .form-group select {
  width: 100%;
- padding: 9px 12px;
- border: 2px solid var(--border);
+ padding: 10px 14px;
+ border: 1.5px solid var(--border);
  border-radius: var(--radius-sm);
  font-size: 14px;
  outline: none;
- transition: border-color 0.2s;
+ transition: all var(--transition);
  background: #fff;
  }
 
  .form-group input:focus,
  .form-group select:focus {
  border-color: var(--pink);
- box-shadow: 0 0 0 3px rgba(244,114,182,0.15);
+ box-shadow: 0 0 0 3px rgba(212,132,154,0.1);
  }
 
  .form-group .form-error {
@@ -620,68 +703,109 @@ gap: 12px;
 }
 
 .btn-purple {
-background: linear-gradient(135deg, #A78BFA, #7C3AED);
+background: var(--purple);
 color: #fff;
 }
 
 .btn-purple:hover {
-background: linear-gradient(135deg, #C4B5FD, #A78BFA);
+background: var(--purple-dark);
 }
 
 .btn-teal {
-background: linear-gradient(135deg, #2DD4BF, #0D9488);
+background: var(--teal);
 color: #fff;
 }
 
 .btn-teal:hover {
-background: linear-gradient(135deg, #5EEAD4, #2DD4BF);
+background: var(--teal-dark);
 }
 
 .btn-amber {
-background: linear-gradient(135deg, #F59E0B, #D97706);
+background: var(--amber);
 color: #fff;
 }
 
 .btn-amber:hover {
-background: linear-gradient(135deg, #FCD34D, #F59E0B);
+background: var(--amber-dark);
 }
 
 .product-list {
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-gap: 12px;
+grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+gap: 14px;
 }
 
 .product-card {
-background: var(--bg-card);
+background: #fff;
 border-radius: var(--radius);
-box-shadow: var(--shadow);
-padding: 12px;
-transition: transform 0.2s, box-shadow 0.2s;
-border-top: 3px solid var(--purple);
+box-shadow: none;
+padding: 0;
+transition: all var(--transition);
+border: 1px solid var(--border);
+overflow: hidden;
+display: flex;
+flex-direction: column;
 }
 
 .product-card:hover {
-transform: translateY(-3px);
-box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+transform: translateY(-2px);
+box-shadow: var(--shadow-hover);
+}
+
+.product-card-image {
+width: 100%;
+height: 160px;
+object-fit: cover;
+background: #F5F4F2;
+display: block;
+}
+
+.product-card-image-placeholder {
+width: 100%;
+height: 160px;
+background: linear-gradient(135deg, #EDE8F5 0%, #F0ECF5 100%);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 32px;
+color: var(--purple);
+}
+
+.product-card-info {
+padding: 12px;
+display: flex;
+flex-direction: column;
+gap: 6px;
+flex: 1;
 }
 
 .product-card-header {
 display: flex;
 justify-content: space-between;
-align-items: flex-start;
-margin-bottom: 10px;
+align-items: center;
+margin-bottom: 4px;
 }
 
 .product-card-name {
-font-size: 13px;
-font-weight: 700;
+font-size: 14px;
+font-weight: 600;
 color: var(--text);
+line-height: 1.4;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
 }
 
 .product-card-actions {
 display: flex;
 gap: 2px;
+flex-shrink: 0;
+opacity: 0;
+transition: opacity var(--transition);
+}
+
+.product-card:hover .product-card-actions {
+opacity: 1;
 }
 
 .product-card-body {
@@ -746,7 +870,9 @@ top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: rgba(0,0,0,0.35);
+background: rgba(30,30,30,0.25);
+backdrop-filter: blur(4px);
+-webkit-backdrop-filter: blur(4px);
 z-index: 200;
 justify-content: center;
 align-items: flex-start;
@@ -760,14 +886,15 @@ display: flex;
 
 .product-form-container {
 background: var(--bg-card);
-border-radius: 20px;
-box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-padding: 28px;
+border-radius: 18px;
+box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+padding: 32px;
 width: 100%;
 max-width: 520px;
 max-height: calc(100vh - 80px);
 overflow-y: auto;
 animation: formSlideIn 0.3s ease;
+border: 1px solid var(--border);
 }
 
 .product-form-title {
@@ -780,7 +907,7 @@ color: var(--purple);
 .product-form-container .form-group input:focus,
 .product-form-container .form-group select:focus {
 border-color: var(--purple);
-box-shadow: 0 0 0 3px rgba(167,139,250,0.15);
+box-shadow: 0 0 0 3px rgba(155,138,184,0.12);
 }
 
 .product-form-container .form-group.has-error input,
@@ -916,28 +1043,29 @@ margin-top: 3px;
 }
 
 .btn-green {
-background: linear-gradient(135deg, #4ADE80, #16A34A);
+background: var(--green);
 color: #fff;
 }
 
 .btn-green:hover {
-background: linear-gradient(135deg, #86EFAC, #4ADE80);
+background: var(--green-dark);
 }
 
 .todo-list {
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-gap: 12px;
+grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+gap: 14px;
 }
 
 .todo-item {
 display: flex;
 flex-direction: column;
-background: var(--bg-card);
+background: #fff;
 border-radius: var(--radius);
-box-shadow: var(--shadow);
+box-shadow: none;
+border: 1px solid var(--border);
 border-top: 3px solid var(--green);
-transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+transition: all var(--transition);
 cursor: grab;
 overflow: hidden;
 position: relative;
@@ -945,8 +1073,8 @@ padding: 0;
 }
 
 .todo-item:hover {
-transform: translateY(-3px);
-box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+transform: translateY(-1px);
+box-shadow: var(--shadow);
 }
 
 .todo-item.dragging {
@@ -1024,19 +1152,19 @@ display: none;
 }
 
 .btn-complete {
-background: linear-gradient(135deg, #4ADE80, #16A34A);
+background: var(--green);
 color: #fff;
 border: none;
-border-radius: 24px;
+border-radius: 8px;
 padding: 6px 16px;
 font-size: 13px;
 font-weight: 600;
 cursor: pointer;
-transition: background 0.2s, transform 0.15s;
+transition: all var(--transition);
 }
 
 .btn-complete:hover {
-background: linear-gradient(135deg, #86EFAC, #4ADE80);
+background: var(--green-dark);
 transform: translateY(-1px);
 }
 
@@ -1089,17 +1217,17 @@ line-height: 1;
  }
 
  .dashboard-card {
- background: var(--bg-card);
+ background: #fff;
  border-radius: var(--radius);
- box-shadow: var(--shadow);
- padding: 20px;
- border-top: 4px solid var(--blue);
- transition: transform 0.2s, box-shadow 0.2s;
+ box-shadow: none;
+ padding: 22px;
+ border: 1px solid var(--border);
+ border-top: 3px solid var(--blue);
+ transition: all var(--transition);
  }
 
  .dashboard-card:hover {
- transform: translateY(-2px);
- box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+ box-shadow: var(--shadow);
  }
 
  .dashboard-card-title {
@@ -1156,24 +1284,24 @@ line-height: 1;
 
  .dashboard-bar-track {
  width: 100%;
- height: 20px;
- background: #EFF6FF;
- border-radius: 10px;
+ height: 18px;
+ background: #F5F4F2;
+ border-radius: 9px;
  overflow: hidden;
  }
 
  .dashboard-bar-fill {
  height: 100%;
  border-radius: 10px;
- background: linear-gradient(90deg, var(--blue), var(--blue-dark));
+ background: var(--blue);
  transition: width 0.5s ease;
  min-width: 2px;
  }
 
- .dashboard-bar-fill.pink { background: linear-gradient(90deg, var(--pink-light), var(--pink)); }
- .dashboard-bar-fill.purple { background: linear-gradient(90deg, #E0B4FF, var(--purple)); }
- .dashboard-bar-fill.green { background: linear-gradient(90deg, #A7F3D0, var(--green-dark)); }
- .dashboard-bar-fill.orange { background: linear-gradient(90deg, #FED7AA, var(--orange)); }
+ .dashboard-bar-fill.pink { background: var(--pink); }
+ .dashboard-bar-fill.purple { background: var(--purple); }
+ .dashboard-bar-fill.green { background: var(--green); }
+ .dashboard-bar-fill.orange { background: var(--orange); }
 
  .dashboard-fabric-list {
  display: flex;
@@ -1185,8 +1313,8 @@ line-height: 1;
  display: flex;
  justify-content: space-between;
  align-items: center;
- padding: 8px 12px;
- background: #EFF6FF;
+ padding: 10px 14px;
+ background: #FAFAFA;
  border-radius: var(--radius-sm);
  font-size: 13px;
  }
@@ -1528,26 +1656,30 @@ line-height: 1;
  .list-table {
  width: 100%;
  border: 1px solid var(--border);
- border-radius: var(--radius-sm);
+ border-radius: var(--radius);
  overflow: hidden;
  font-size: 13px;
+ background: #fff;
  }
 
  .list-table-header {
  display: flex;
- background: var(--bg);
- border-bottom: 2px solid var(--border);
+ background: #FAFAFA;
+ border-bottom: 1px solid var(--border);
  font-weight: 600;
  color: var(--text);
- padding: 10px 0;
+ padding: 12px 0;
+ font-size: 12px;
+ text-transform: uppercase;
+ letter-spacing: 0.03em;
  }
 
  .list-table-row {
  display: flex;
  align-items: center;
- border-bottom: 1px solid var(--border);
- padding: 8px 0;
- transition: background 0.1s;
+ border-bottom: 1px solid #F0EFED;
+ padding: 10px 0;
+ transition: background var(--transition);
  }
 
  .list-table-row:last-child {
@@ -1555,7 +1687,7 @@ line-height: 1;
  }
 
  .list-table-row:hover {
- background: #FAFBFF;
+ background: #FAFAFA;
  }
 
  .lt-col {
@@ -1610,7 +1742,9 @@ line-height: 1;
  left: 0;
  right: 0;
  bottom: 0;
- background: rgba(0,0,0,0.4);
+ background: rgba(30,30,30,0.25);
+ backdrop-filter: blur(4px);
+ -webkit-backdrop-filter: blur(4px);
  z-index: 300;
  justify-content: center;
  align-items: center;
@@ -1623,12 +1757,13 @@ line-height: 1;
  .confirm-dialog {
  background: var(--bg-card);
  border-radius: var(--radius);
- box-shadow: 0 8px 32px rgba(0,0,0,0.2);
- padding: 28px;
+ box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+ padding: 32px;
  max-width: 400px;
  width: 90%;
  animation: formSlideIn 0.3s ease;
  text-align: center;
+ border: 1px solid var(--border);
  }
 
  .confirm-dialog-title {
@@ -1652,50 +1787,6 @@ line-height: 1;
  }
 
  /* 响应式布局 */
- @media (max-width: 768px) {
- .sidebar {
- position: fixed;
- top: auto;
- bottom: 0;
- left: 0;
- right: 0;
- width: 100%;
- height: auto;
- flex-direction: row;
- padding: 8px;
- border-right: none;
- border-top: 1px solid var(--border);
- z-index: 100;
- }
-
- .sidebar-title { display: none; }
- .sidebar-actions { display: none; }
-
- .sidebar-nav {
- flex-direction: row;
- justify-content: space-around;
- width: 100%;
- gap: 0;
- }
-
- .sidebar-nav a {
- flex-direction: column;
- font-size: 11px;
- padding: 6px 8px;
- gap: 2px;
- }
-
- .sidebar-nav li a.active {
- border-left: none;
- border-bottom: 2px solid;
- }
-
- .main-content {
- margin-left: 0;
- padding-bottom: 70px;
- }
- }
-
  @media (max-width: 600px) {
  .page-wrapper {
  padding: 16px 10px;
@@ -1830,7 +1921,9 @@ line-height: 1;
  left: 0;
  right: 0;
  bottom: 0;
- background: rgba(0,0,0,0.4);
+ background: rgba(30,30,30,0.25);
+ backdrop-filter: blur(4px);
+ -webkit-backdrop-filter: blur(4px);
  z-index: 250;
  justify-content: center;
  align-items: center;
@@ -1843,14 +1936,15 @@ line-height: 1;
  .option-manager-dialog {
  background: var(--bg-card);
  border-radius: var(--radius);
- box-shadow: 0 8px 32px rgba(0,0,0,0.2);
- padding: 24px;
+ box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+ padding: 28px;
  max-width: 400px;
  width: 90%;
  max-height: 70vh;
  display: flex;
  flex-direction: column;
  animation: formSlideIn 0.3s ease;
+ border: 1px solid var(--border);
  }
 
  .option-manager-title {
@@ -1930,7 +2024,9 @@ line-height: 1;
  display: none;
  position: fixed;
  top: 0; left: 0; right: 0; bottom: 0;
- background: rgba(0,0,0,0.35);
+ background: rgba(30,30,30,0.25);
+ backdrop-filter: blur(4px);
+ -webkit-backdrop-filter: blur(4px);
  z-index: 200;
  justify-content: center;
  align-items: flex-start;
@@ -1940,12 +2036,13 @@ line-height: 1;
  .todo-form-overlay.show { display: flex; }
  .todo-form-container {
  background: var(--bg-card);
- border-radius: 20px;
- box-shadow: 0 8px 32px rgba(0,0,0,0.18);
- padding: 28px;
+ border-radius: 18px;
+ box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+ padding: 32px;
  width: 100%;
  max-width: 520px;
  animation: formSlideIn 0.3s ease;
+ border: 1px solid var(--border);
  }
  .todo-form-title {
  font-size: 18px;
@@ -1956,7 +2053,7 @@ line-height: 1;
  .todo-form-container .form-group input:focus,
  .todo-form-container .form-group select:focus {
  border-color: var(--green);
- box-shadow: 0 0 0 3px rgba(74,222,128,0.15);
+ box-shadow: 0 0 0 3px rgba(123,175,142,0.12);
  }
 
  /* 布料关联剩余米数提示 */
@@ -1986,16 +2083,16 @@ line-height: 1;
  flex: 1;
  min-width: 200px;
  padding: 10px 14px;
- border: 2px solid var(--border);
+ border: 1.5px solid var(--border);
  border-radius: var(--radius-sm);
  font-size: 14px;
  outline: none;
- transition: border-color 0.2s;
+ transition: all var(--transition);
  background: #fff;
  }
  .home-search-input:focus {
  border-color: var(--blue);
- box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+ box-shadow: 0 0 0 3px rgba(123,163,196,0.1);
  }
  .home-search-scope {
  padding: 8px 12px;
@@ -2131,7 +2228,7 @@ line-height: 1;
  .auth-page {
  position: fixed;
  top: 0; left: 0; right: 0; bottom: 0;
- background: linear-gradient(135deg, #FAFBFF 0%, #FBCFE8 50%, #E9D5FF 100%);
+ background: linear-gradient(145deg, #FFFFFF 0%, #F8F0F3 40%, #F0ECF5 70%, #ECF3F2 100%);
  display: flex;
  justify-content: center;
  align-items: center;
@@ -2141,13 +2238,14 @@ line-height: 1;
 
  .auth-container {
  background: #fff;
- border-radius: 24px;
- box-shadow: 0 20px 60px rgba(0,0,0,0.12);
- padding: 40px 36px;
+ border-radius: 16px;
+ box-shadow: 0 20px 60px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.03);
+ padding: 44px 40px;
  width: 100%;
  max-width: 400px;
  text-align: center;
  animation: formSlideIn 0.4s ease;
+ border: 1px solid var(--border);
  }
 
  .auth-logo {
@@ -2187,16 +2285,17 @@ line-height: 1;
  .auth-form-group input {
  width: 100%;
  padding: 12px 14px;
- border: 2px solid var(--border);
- border-radius: 12px;
+ border: 1.5px solid var(--border);
+ border-radius: 10px;
  font-size: 14px;
  outline: none;
- transition: border-color 0.2s, box-shadow 0.2s;
+ transition: all var(--transition);
+ background: #fff;
  }
 
  .auth-form-group input:focus {
  border-color: var(--pink);
- box-shadow: 0 0 0 3px rgba(244,114,182,0.15);
+ box-shadow: 0 0 0 3px rgba(212,132,154,0.1);
  }
 
  .auth-error {
@@ -2309,6 +2408,10 @@ line-height: 1;
  display: flex;
  }
 
+ .topbar {
+ display: none;
+ }
+
  .sidebar {
  transform: translateX(-100%);
  transition: transform 0.25s ease;
@@ -2337,7 +2440,7 @@ line-height: 1;
  .fabric-list,
  .product-list,
  .todo-list {
- grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
  gap: 10px;
  }
 
@@ -2478,15 +2581,14 @@ line-height: 1;
  <!-- 手机端顶栏 -->
  <header class="mobile-header">
  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="菜单">☰</button>
- <span class="mobile-header-title">🧵 缝纫管理</span>
+ <a href="#home" style="text-decoration:none;color:inherit;"><span class="mobile-header-title">🧵 缝纫管理系统</span></a>
  </header>
  <!-- 侧边栏遮罩 -->
  <div class="sidebar-overlay" id="sidebarOverlay"></div>
  <!-- 侧边栏 -->
  <aside class="sidebar" id="sidebar">
- <div class="sidebar-title">🧵 缝纫管理</div>
+ <div class="sidebar-title"><a href="#home" style="text-decoration:none;color:inherit;">🧵 缝纫管理系统</a></div>
  <ul class="sidebar-nav">
- <li><a href="#home" data-page="home">🏠 主页</a></li>
  <li><a href="#fabric" data-page="fabric">🧵 布料管理</a></li>
  <li><a href="#product" data-page="product">✂️ 制品管理</a></li>
  <li><a href="#pattern" data-page="pattern">📐 纸样管理</a></li>
@@ -2506,6 +2608,13 @@ line-height: 1;
 
  <!-- 主内容区 -->
  <main class="main-content">
+ <!-- 顶部栏 -->
+ <div class="topbar" id="topbar">
+ <div class="topbar-title" id="topbarTitle">主页</div>
+ <div class="topbar-actions">
+ <span id="topbarUser" style="font-size:13px;color:var(--text-light);"></span>
+ </div>
+ </div>
 
  <!-- 导入确认对话框 -->
  <div class="confirm-overlay" id="importConfirmOverlay">
@@ -3159,10 +3268,11 @@ return v.toString(16);
 });
 }
 
-/* ========== ImageStore 模块（IndexedDB 图片存储） ========== */
+/* ========== ImageStore 模块（IndexedDB 图片存储 + Supabase Storage） ========== */
 const ImageStore = {
  DB_NAME: 'sewing_images_db',
  STORE_NAME: 'images',
+ BUCKET: 'images',
  db: null,
 
  init() {
@@ -3186,6 +3296,7 @@ const ImageStore = {
  },
 
  save(key, base64Data) {
+ var self = this;
  return new Promise(function(resolve, reject) {
  if (!ImageStore.db) { resolve(key); return; }
  var tx = ImageStore.db.transaction(ImageStore.STORE_NAME, 'readwrite');
@@ -3194,6 +3305,33 @@ const ImageStore = {
  tx.oncomplete = function() { resolve(key); };
  tx.onerror = function(e) { console.error('ImageStore save error:', e); resolve(key); };
  });
+ },
+
+ // 上传图片到 Supabase Storage，返回公开 URL
+ async saveToCloud(base64Data) {
+ try {
+ var client = window.supabaseClient;
+ if (!client) return null;
+ var userId = (window.Auth && Auth.currentUser) ? Auth.currentUser.id : 'anon';
+ // 从 base64 转 Blob
+ var match = base64Data.match(/^data:([^;]+);base64,(.+)$/);
+ if (!match) return null;
+ var mime = match[1];
+ var ext = mime.split('/')[1] || 'png';
+ var binary = atob(match[2]);
+ var arr = new Uint8Array(binary.length);
+ for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+ var blob = new Blob([arr], { type: mime });
+ var fileName = userId + '/' + generateUUID() + '.' + ext;
+ var { data, error } = await client.storage.from(this.BUCKET).upload(fileName, blob, { contentType: mime, upsert: false });
+ if (error) { console.error('[ImageStore] 上传失败:', error.message); return null; }
+ // 获取公开 URL
+ var { data: urlData } = client.storage.from(this.BUCKET).getPublicUrl(fileName);
+ return urlData ? urlData.publicUrl : null;
+ } catch(e) {
+ console.error('[ImageStore] saveToCloud error:', e);
+ return null;
+ }
  },
 
  get(key) {
@@ -4532,48 +4670,33 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  var remainingClass = remaining < 0.5 ? 'fabric-card-remaining low' : 'fabric-card-remaining';
 
  html += '<div class="fabric-card">';
+ /* 图片区域 */
+ if (fabric.image) {
+ var fImgId = 'fimg_' + fabric.id;
+ html += '<img id="' + fImgId + '" class="fabric-card-image" alt="">';
+ } else {
+ html += '<div class="fabric-card-image-placeholder">🧵</div>';
+ }
+ /* 信息区域 */
+ html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header">';
  html += '<span class="fabric-card-name">' + self.escapeHtml(fabric.name) + '</span>';
  html += '<div class="fabric-card-actions">';
  html += '<button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')"title="编辑">✏️</button>';
  html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')"title="删除">🗑️</button>';
  html += '</div></div>';
- /* 图片缩略图 */
- if (fabric.image) {
- var fImgId = 'fimg_' + fabric.id;
- html += '<img id="' + fImgId + '" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="">';
- }
  html += '<div class="fabric-card-body">';
- /* 始终可见：店铺 + 剩余 */
  if (fabric.shop) {
  html += '<div class="fabric-card-row"><span class="fabric-card-label">店铺</span><span class="fabric-card-value">' + self.escapeHtml(fabric.shop) + '</span></div>';
  }
- html += '<div class="fabric-card-row"><span class="fabric-card-label">剩余</span><span class="' + remainingClass + '">' + remaining + ' 米</span></div>';
- /* 隐藏详情 */
- var fabricExpanded = CardExpandState.getState('fabric');
- html += '<div class="card-details" style="display:' + (fabricExpanded ? 'block' : 'none') + ';">';
- html += '<div class="fabric-card-row"><span class="fabric-card-label">购买日期</span><span class="fabric-card-value">' + self.escapeHtml(fabric.purchaseDate || '-') + '</span></div>';
+ html += '<div class="fabric-card-row"><span class="fabric-card-label">剩余</span><span class="' + remainingClass + '">' + remaining + ' / ' + fabric.meters + ' 米</span></div>';
+ if (fabric.price) {
  html += '<div class="fabric-card-row"><span class="fabric-card-label">单价</span><span class="fabric-card-value">¥' + up.toFixed(2) + '/米</span></div>';
- if (fabric.weight) {
- html += '<div class="fabric-card-row"><span class="fabric-card-label">克重</span><span class="fabric-card-value">' + self.escapeHtml(fabric.weight) + '</span></div>';
  }
  if (fabric.quality) {
  html += '<div class="fabric-card-row"><span class="fabric-card-label">评级</span><span class="fabric-stars">' + self.renderStarDisplay(fabric.quality) + '</span></div>';
  }
- /* 关联制品 */
- var linkedProducts = products.filter(function(p) {
- return p.fabricUsages && p.fabricUsages.some(function(u) { return u.fabricId === fabric.id; });
- });
- if (linkedProducts.length > 0) {
- html += '<div style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);">';
- html += '<span class="fabric-card-label">关联制品：</span>';
- linkedProducts.forEach(function(p) {
- html += '<div style="font-size:11px;padding:1px 0;"><a href=" " onclick="Router.navigate(\'product\');setTimeout(function(){ProductController.openForm(\'' + p.id + '\')},100);return false;" style="color:var(--purple);text-decoration:underline;cursor:pointer;">' + self.escapeHtml(p.name) + '</a ></div>';
- });
  html += '</div>';
- }
- html += '</div>';
- html += '<div class="card-expand-toggle" onclick="var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (fabricExpanded ? '收起▴' : '展开▾') + '</div>';
  html += '</div></div>';
  });
 
@@ -5467,6 +5590,15 @@ container.className = 'product-list';
 var html = '';
 products.forEach(function(product) {
 html += '<div class="product-card">';
+/* 图片区域 */
+if (product.image) {
+var pImgId = 'pimg_' + product.id;
+html += '<img id="' + pImgId + '" class="product-card-image" alt="">';
+} else {
+html += '<div class="product-card-image-placeholder">✂️</div>';
+}
+/* 信息区域 */
+html += '<div class="product-card-info">';
 html += '<div class="product-card-header">';
 html += '<span class="product-card-name">' + self.escapeHtml(product.name) + '</span>';
 html += '<div class="product-card-actions">';
@@ -5474,59 +5606,21 @@ html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="P
 html += '<button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')"title="编辑">✏️</button>';
 html += '<button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')"title="删除">🗑️</button>';
 html += '</div></div>';
-/* 图片缩略图 */
-if (product.image) {
-var pImgId = 'pimg_' + product.id;
-html += '<img id="' + pImgId + '" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="">';
-}
 html += '<div class="product-card-body">';
-/* 数量显示 */
-var qty = product.quantity || 1;
-if (qty > 1) {
-html += '<div class="fabric-card-row"><span class="fabric-card-label">数量</span><span class="fabric-card-value" style="color:var(--green-dark);">×' + qty + '</span></div>';
-}
-/* 隐藏详情 */
-var productExpanded = CardExpandState.getState('product');
-html += '<div class="card-details" style="display:' + (productExpanded ? 'block' : 'none') + ';">';
 if (product.category) {
 html += '<div class="product-card-row"><span class="product-card-label">类别</span><span class="product-card-value">' + self.escapeHtml(product.category) + '</span></div>';
 }
-html += '<div class="product-card-row"><span class="product-card-label">完成时间</span><span class="product-card-value">' + self.escapeHtml(product.completedDate) + '</span></div>';
+if (product.completedDate) {
+html += '<div class="product-card-row"><span class="product-card-label">完成</span><span class="product-card-value">' + self.escapeHtml(product.completedDate) + '</span></div>';
+}
 if (product.user) {
 html += '<div class="product-card-row"><span class="product-card-label">使用者</span><span class="product-card-value">' + self.escapeHtml(product.user) + '</span></div>';
 }
-if (product.patternId) {
-var linkedPat = Store.getById(Store.KEYS.PATTERNS, product.patternId);
-if (linkedPat) {
-html += '<div class="product-card-row"><span class="product-card-label">纸样</span><span class="product-card-value"><a href="#pattern" onclick="Router.navigate(\'pattern\');setTimeout(function(){PatternController.openForm(\'' + product.patternId + '\')},100);return false;" style="color:var(--teal);text-decoration:underline;cursor:pointer;">' + self.escapeHtml(linkedPat.name) + (linkedPat.code ? ' #' + self.escapeHtml(linkedPat.code) : '') + '</a></span></div>';
-}
-} else {
-if (product.patternSource) {
-html += '<div class="product-card-row"><span class="product-card-label">纸样来源</span><span class="product-card-value">' + self.escapeHtml(product.patternSource) + '</span></div>';
-}
-if (product.patternCode) {
-html += '<div class="product-card-row"><span class="product-card-label">纸样编号</span><span class="product-card-value">' + self.escapeHtml(product.patternCode) + '</span></div>';
-}
-}
-if (product.tutorialLink) {
-html += '<div class="product-card-row"><span class="product-card-label">教程</span><span class="product-card-value"><a href="' + ensureUrl(product.tutorialLink) + '" target="_blank" style="color:var(--blue);text-decoration:underline;">查看教程</a></span></div>';
-}
-if (product.fabricUsages && product.fabricUsages.length > 0) {
-html += '<div class="product-card-fabrics">';
-html += '<div class="product-card-label" style="margin-bottom:4px">布料关联：</div>';
-product.fabricUsages.forEach(function(usage) {
-var fabric = fabricMap[usage.fabricId];
-var fabricName = fabric ? fabric.name : '(已删除)';
-if (fabric) {
-html += '<div class="fabric-usage-item">🧵 <a href="#fabric" onclick="Router.navigate(\'fabric\');setTimeout(function(){FabricController.openForm(\'' + usage.fabricId + '\')},100);return false;" style="color:var(--pink);text-decoration:underline;cursor:pointer;">' + self.escapeHtml(fabricName) + '</a> - ' + usage.metersUsed + ' 米</div>';
-} else {
-html += '<div class="fabric-usage-item">🧵 ' + self.escapeHtml(fabricName) + ' - ' + usage.metersUsed + ' 米</div>';
-}
-});
-html += '</div>';
+var qty = product.quantity || 1;
+if (qty > 1) {
+html += '<div class="product-card-row"><span class="product-card-label">数量</span><span class="product-card-value" style="color:var(--green-dark);">×' + qty + '</span></div>';
 }
 html += '</div>';
-html += '<div class="card-expand-toggle" onclick="var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (productExpanded ? '收起▴' : '展开▾') + '</div>';
 html += '</div></div>';
 });
 
@@ -7013,29 +7107,21 @@ const PatternController = {
 
  container.className = 'fabric-list';
  var html = '';
- var expanded = CardExpandState.getState('pattern');
  patterns.forEach(function(p) {
- html += '<div class="fabric-card" style="border-top-color:var(--teal);">';
+ html += '<div class="fabric-card" style="border-top:none;">';
+ /* 图片区域 */
+ if (p.image) { html += '<img id="ptimg_' + p.id + '" class="fabric-card-image" alt="">'; }
+ else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#E0F0ED,#ECF5F3);">📐</div>'; }
+ /* 信息区域 */
+ html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(p.name) + '</span>';
  html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">✏️</button>';
  html += '<button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">🗑️</button></div></div>';
- if (p.image) { html += '<img id="ptimg_' + p.id + '" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="">'; }
  html += '<div class="fabric-card-body">';
  if (p.brand) html += '<div class="fabric-card-row"><span class="fabric-card-label">来源</span><span class="fabric-card-value">' + self.escapeHtml(p.brand) + '</span></div>';
  if (p.code) html += '<div class="fabric-card-row"><span class="fabric-card-label">编号</span><span class="fabric-card-value">' + self.escapeHtml(p.code) + '</span></div>';
- html += '<div class="card-details" style="display:' + (expanded ? 'block' : 'none') + ';">';
  if (p.category) html += '<div class="fabric-card-row"><span class="fabric-card-label">类别</span><span class="fabric-card-value">' + self.escapeHtml(p.category) + '</span></div>';
- if (p.link) html += '<div class="fabric-card-row"><span class="fabric-card-label">链接</span><span class="fabric-card-value"><a href="' + ensureUrl(p.link) + '" target="_blank" style="color:var(--teal);text-decoration:underline;">查看</a></span></div>';
- if (p.note) html += '<div class="fabric-card-row"><span class="fabric-card-label">备注</span><span class="fabric-card-value">' + self.escapeHtml(p.note) + '</span></div>';
- /* 关联制品 */
- var linked = products.filter(function(pr) { return pr.patternId === p.id || (pr.patternCode && p.code && pr.patternCode === p.code && pr.patternSource === p.brand); });
- if (linked.length > 0) {
- html += '<div style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);"><span class="fabric-card-label">关联制品：</span>';
- linked.forEach(function(pr) { html += '<div style="font-size:11px;padding:1px 0;"><a href="#product" onclick="Router.navigate(\'product\');setTimeout(function(){ProductController.openForm(\'' + pr.id + '\')},100);return false;" style="color:var(--purple);text-decoration:underline;cursor:pointer;">' + self.escapeHtml(pr.name) + '</a></div>'; });
  html += '</div>';
- }
- html += '</div>';
- html += '<div class="card-expand-toggle" onclick="var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (expanded ? '收起▴' : '展开▾') + '</div>';
  html += '</div></div>';
  });
  container.innerHTML = html;
@@ -7276,22 +7362,21 @@ const NotionController = {
 
  container.className = 'fabric-list';
  var html = '';
- var expanded = CardExpandState.getState('notion');
  notions.forEach(function(n) {
- html += '<div class="fabric-card" style="border-top-color:var(--amber);">';
+ html += '<div class="fabric-card" style="border-top:none;">';
+ /* 图片区域 */
+ if (n.image) { html += '<img id="ntimg_' + n.id + '" class="fabric-card-image" alt="">'; }
+ else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#F5EFD8,#F0ECE0);">🧷</div>'; }
+ /* 信息区域 */
+ html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(n.name) + '</span>';
  html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">✏️</button>';
  html += '<button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">🗑️</button></div></div>';
- if (n.image) { html += '<img id="ntimg_' + n.id + '" style="width:100%;max-height:80px;object-fit:cover;border-radius:6px;margin-bottom:6px;" alt="">'; }
  html += '<div class="fabric-card-body">';
  if (n.category) html += '<div class="fabric-card-row"><span class="fabric-card-label">类别</span><span class="fabric-card-value">' + self.escapeHtml(n.category) + '</span></div>';
  html += '<div class="fabric-card-row"><span class="fabric-card-label">数量</span><span class="fabric-card-value">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span></div>';
- html += '<div class="card-details" style="display:' + (expanded ? 'block' : 'none') + ';">';
- if (n.shop) html += '<div class="fabric-card-row"><span class="fabric-card-label">店铺</span><span class="fabric-card-value">' + self.escapeHtml(n.shop) + '</span></div>';
  html += '<div class="fabric-card-row"><span class="fabric-card-label">价格</span><span class="fabric-card-value">¥' + n.price + '</span></div>';
- html += '<div class="fabric-card-row"><span class="fabric-card-label">日期</span><span class="fabric-card-value">' + self.escapeHtml(n.purchaseDate || '-') + '</span></div>';
  html += '</div>';
- html += '<div class="card-expand-toggle" onclick="var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (expanded ? '收起▴' : '展开▾') + '</div>';
  html += '</div></div>';
  });
  container.innerHTML = html;
@@ -7773,6 +7858,14 @@ ImageStore.init().then(function() {
  OptionController._ensureInitialized();
  migrateImagesToIDB();
  Router.init();
+
+ // 顶部栏标题联动
+ var topbarTitleMap = { home: '主页', fabric: '布料管理', product: '制品管理', pattern: '纸样管理', notion: '辅料管理', todo: '待做列表', dashboard: '看板', print: '打印' };
+ Router.onNavigate(function(page) {
+   var el = document.getElementById('topbarTitle');
+   if (el) el.textContent = topbarTitleMap[page] || '主页';
+ });
+
  DeleteConfirm.init();
  HomeController.init();
  FabricController.init();
@@ -7839,6 +7932,52 @@ Auth.init().then(function() {
   console.error('[启动] Auth init error:', e);
   AuthUI.init();
 });
+
+// 数据加载完成后刷新所有页面
+window.addEventListener('dataReady', function() {
+  console.log('[数据就绪] 刷新所有页面');
+  try {
+    FabricController.renderList();
+    ProductController.renderList();
+    TodoController.renderList();
+    PatternController.renderList();
+    NotionController.renderList();
+    if (Router.getCurrentPage() === 'dashboard') DashboardController.refresh();
+    if (Router.getCurrentPage() === 'home') HomeController.doSearch();
+  } catch(e) { console.error('[数据就绪] 刷新失败:', e); }
+
+  // 后台迁移 idb: 图片到 Supabase Storage
+  migrateImagesToCloud();
+});
+
+async function migrateImagesToCloud() {
+  if (!window.supabaseClient || !DataLayer.isLoaded()) return;
+  var tables = [
+    { key: 'sewing_fabrics', table: 'fabrics' },
+    { key: 'sewing_products', table: 'products' },
+    { key: 'sewing_todos', table: 'todos' },
+    { key: 'sewing_patterns', table: 'patterns' },
+    { key: 'sewing_notions', table: 'notions' }
+  ];
+  for (var t = 0; t < tables.length; t++) {
+    var items = Store.getAll(tables[t].key);
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item.image && item.image.startsWith('idb:')) {
+        try {
+          var idbKey = item.image.substring(4);
+          var base64 = await ImageStore.get(idbKey);
+          if (!base64) continue;
+          var cloudUrl = await ImageStore.saveToCloud(base64);
+          if (cloudUrl) {
+            Store.update(tables[t].key, item.id, { image: cloudUrl });
+            console.log('[图片迁移] ' + tables[t].table + '/' + item.id + ' 已上传到云端');
+          }
+        } catch(e) { console.error('[图片迁移] 失败:', e); }
+      }
+    }
+  }
+}
 </script>
 </body>
 </html>

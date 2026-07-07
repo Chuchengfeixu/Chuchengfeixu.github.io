@@ -12,7 +12,7 @@ var TABLE_MAP = {
   'sewing_todos': 'todos',
   'sewing_patterns': 'patterns',
   'sewing_notions': 'notions',
-  'sewing_scraps': null
+  'sewing_scraps': 'scraps'
 };
 
 var _mem = {};
@@ -78,6 +78,11 @@ function toDB(table, rec) {
     if (rec.purchaseDate !== undefined) r.purchase_date = rec.purchaseDate || null;
     if (rec.notes !== undefined) r.notes = rec.notes;
     if (rec.image !== undefined) r.image_url = rec.image;
+  } else if (table === 'scraps') {
+    if (rec.fabricId !== undefined) r.fabric_id = rec.fabricId;
+    if (rec.fabricName !== undefined) r.fabric_name = rec.fabricName;
+    if (rec.meters !== undefined) r.meters = parseFloat(rec.meters) || 0;
+    if (rec.date !== undefined) r.scrap_date = rec.date || null;
   }
   return r;
 }
@@ -140,6 +145,11 @@ function fromDB(table, row) {
     r.purchaseDate = row.purchase_date || '';
     r.notes = row.notes || '';
     r.image = row.image_url || '';
+  } else if (table === 'scraps') {
+    r.fabricId = row.fabric_id || '';
+    r.fabricName = row.fabric_name || '';
+    r.meters = row.meters || 0;
+    r.date = row.scrap_date || '';
   }
   return r;
 }
@@ -207,7 +217,8 @@ async function loadFromCloud() {
       db.from('todos').select('*').order('sort_order', { ascending: true }),
       db.from('patterns').select('*').order('created_at', { ascending: false }),
       db.from('notions').select('*').order('created_at', { ascending: false }),
-      db.from('product_fabrics').select('*')
+      db.from('product_fabrics').select('*'),
+      db.from('scraps').select('*').order('created_at', { ascending: false })
     ]);
 
     var fabrics = (results[0].data || []).map(function(r) { return fromDB('fabrics', r); });
@@ -216,6 +227,7 @@ async function loadFromCloud() {
     var patterns = (results[3].data || []).map(function(r) { return fromDB('patterns', r); });
     var notions = (results[4].data || []).map(function(r) { return fromDB('notions', r); });
     var pfRows = results[5].data || [];
+    var scraps = (results[6].data || []).map(function(r) { return fromDB('scraps', r); });
 
     // 给 products 附上 fabricUsages
     products.forEach(function(p) {
@@ -229,10 +241,27 @@ async function loadFromCloud() {
     _mem['sewing_todos'] = todos;
     _mem['sewing_patterns'] = patterns;
     _mem['sewing_notions'] = notions;
+    _mem['sewing_scraps'] = scraps;
 
-    // scraps 保留 localStorage
-    var scrapsRaw = localStorage.getItem('sewing_scraps');
-    _mem['sewing_scraps'] = scrapsRaw ? JSON.parse(scrapsRaw) : [];
+    // 如果云端 scraps 为空，尝试从 localStorage 迁移
+    if (scraps.length === 0) {
+      var scrapsRaw = localStorage.getItem('sewing_scraps');
+      var localScraps = scrapsRaw ? JSON.parse(scrapsRaw) : [];
+      if (localScraps.length > 0) {
+        _mem['sewing_scraps'] = localScraps;
+        // 后台迁移到云端
+        var userId = getUserId();
+        localScraps.forEach(function(s) {
+          var dbData = toDB('scraps', s);
+          dbData.id = s.id;
+          dbData.user_id = userId;
+          db.from('scraps').insert(dbData).then(function(res) {
+            if (res.error) console.error('[迁移scraps]', res.error.message);
+          });
+        });
+        console.log('[DataLayer] 已迁移 ' + localScraps.length + ' 条报废记录到云端');
+      }
+    }
 
     _cloudLoaded = true;
     console.log('[DataLayer] 云端数据已加载');
@@ -354,7 +383,7 @@ window.Store = {
       });
       if (imported.data.scraps) {
         _mem['sewing_scraps'] = imported.data.scraps;
-        localStorage.setItem('sewing_scraps', JSON.stringify(imported.data.scraps));
+        imported.data.scraps.forEach(function(record) { syncToCloud('add', 'scraps', record.id, record); });
       }
       if (imported.data.options) {
         localStorage.setItem('sewing_options', JSON.stringify(imported.data.options));
