@@ -154,6 +154,48 @@ function fromDB(table, row) {
   return r;
 }
 
+// === 同步失败处理：兜底写本地 + 提示用户 ===
+// 反查内存 key（TABLE_MAP 是 key -> table）
+function keyForTable(table) {
+  for (var k in TABLE_MAP) { if (TABLE_MAP[k] === table) return k; }
+  return null;
+}
+
+// 把某张表当前内存数据兜底写回 localStorage，防止刷新后丢失
+function persistLocal(table) {
+  var key = keyForTable(table);
+  if (!key || !_mem[key]) return;
+  try { localStorage.setItem(key, JSON.stringify(_mem[key])); }
+  catch (e) { console.error('[兜底写本地失败]', key, e); }
+}
+
+// 防抖提示，避免同一批操作连环弹窗
+var _syncErrorTimer = null;
+function notifySyncError() {
+  if (_syncErrorTimer) return;
+  _syncErrorTimer = setTimeout(function () { _syncErrorTimer = null; }, 4000);
+  if (window.Toast && Toast.show) {
+    Toast.show('⚠️ 网络异常，数据未能同步到云端，已暂存本地，请联网后重新编辑保存', 'error');
+  }
+}
+
+function onSyncFail(action, table, msg) {
+  console.error('[云端' + action + '失败]', table, msg);
+  persistLocal(table);   // 兜底：把内存写回本地
+  notifySyncError();     // 提示用户
+}
+
+// 包装一个 supabase 写操作：同时处理"返回 error"和"断网 reject"两种失败
+function runSync(action, table, promise) {
+  return promise.then(function (res) {
+    if (res && res.error) { onSyncFail(action, table, res.error.message); return false; }
+    return true;
+  }).catch(function (err) {
+    onSyncFail(action, table, (err && err.message) || '网络请求失败');
+    return false;
+  });
+}
+
 // === 后台同步到云端 ===
 function syncToCloud(action, table, id, data) {
   if (!table) return;
@@ -164,45 +206,33 @@ function syncToCloud(action, table, id, data) {
     var dbData = toDB(table, data);
     dbData.id = id;
     dbData.user_id = userId;
-    getDB().from(table).insert(dbData).then(function(res) {
-      if (res.error) console.error('[云端add]', table, res.error.message);
-    });
+    runSync('add', table, getDB().from(table).insert(dbData));
     if (table === 'products' && data.fabricUsages && data.fabricUsages.length > 0) {
       var rows = data.fabricUsages.map(function(u) {
         return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: userId };
       });
-      getDB().from('product_fabrics').insert(rows).then(function(res) {
-        if (res.error) console.error('[云端add product_fabrics]', res.error.message);
-      });
+      runSync('add', 'products', getDB().from('product_fabrics').insert(rows));
     }
   } else if (action === 'update') {
     var dbData = toDB(table, data);
-    getDB().from(table).update(dbData).eq('id', id).then(function(res) {
-      if (res.error) console.error('[云端update]', table, res.error.message);
-    });
+    runSync('update', table, getDB().from(table).update(dbData).eq('id', id));
     if (table === 'products' && data.fabricUsages !== undefined) {
       getDB().from('product_fabrics').delete().eq('product_id', id).then(function() {
         if (data.fabricUsages && data.fabricUsages.length > 0) {
           var rows = data.fabricUsages.map(function(u) {
             return { product_id: id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: getUserId() };
           });
-          getDB().from('product_fabrics').insert(rows).then(function(res) {
-            if (res.error) console.error('[云端update product_fabrics]', res.error.message);
-          });
+          runSync('update', 'products', getDB().from('product_fabrics').insert(rows));
         }
-      });
+      }).catch(function(err) { onSyncFail('update', 'products', (err && err.message) || '网络请求失败'); });
     }
   } else if (action === 'remove') {
     if (table === 'products') {
       getDB().from('product_fabrics').delete().eq('product_id', id).then(function() {
-        getDB().from(table).delete().eq('id', id).then(function(res) {
-          if (res.error) console.error('[云端remove]', table, res.error.message);
-        });
-      });
+        runSync('remove', table, getDB().from(table).delete().eq('id', id));
+      }).catch(function(err) { onSyncFail('remove', table, (err && err.message) || '网络请求失败'); });
     } else {
-      getDB().from(table).delete().eq('id', id).then(function(res) {
-        if (res.error) console.error('[云端remove]', table, res.error.message);
-      });
+      runSync('remove', table, getDB().from(table).delete().eq('id', id));
     }
   }
 }
