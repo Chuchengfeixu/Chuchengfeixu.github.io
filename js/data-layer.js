@@ -399,34 +399,89 @@ window.Store = {
     });
   },
 
-  importAll: function(jsonString) {
+  importAll: async function(jsonString) {
     try {
       var imported = JSON.parse(jsonString);
-      if (!imported.version || !imported.data) return Promise.resolve(false);
-      var tables = ['fabrics', 'products', 'todos', 'patterns', 'notions'];
-      tables.forEach(function(t) {
-        var key = 'sewing_' + t;
-        if (imported.data[t]) {
-          _mem[key] = imported.data[t];
-          imported.data[t].forEach(function(record) { syncToCloud('add', t, record.id, record); });
-        }
-      });
-      if (imported.data.scraps) {
-        _mem['sewing_scraps'] = imported.data.scraps;
-        imported.data.scraps.forEach(function(record) { syncToCloud('add', 'scraps', record.id, record); });
+      if (!imported.version || !imported.data) return false;
+
+      var userId = getUserId();
+      if (!userId) {
+        if (window.Toast) Toast.show('未登录，无法导入到云端', 'error');
+        return false;
       }
+
+      var db = getDB();
+      // 用 upsert（按主键 id 冲突则更新），避免重复导入时主键冲突导致失败
+      var tables = ['fabrics', 'products', 'todos', 'patterns', 'notions', 'scraps'];
+      var hadError = false;
+
+      for (var i = 0; i < tables.length; i++) {
+        var t = tables[i];
+        var key = 'sewing_' + t;
+        var records = imported.data[t];
+        if (!records || !records.length) continue;
+
+        // 更新内存
+        _mem[key] = records;
+
+        // 构造批量 upsert 行（保留原 id + 绑定当前用户）
+        var rows = records.map(function(rec) {
+          var row = toDB(t, rec);
+          row.id = rec.id;
+          row.user_id = userId;
+          return row;
+        });
+
+        try {
+          var res = await db.from(t).upsert(rows);
+          if (res.error) { hadError = true; console.error('[导入upsert]', t, res.error.message); }
+        } catch (e) {
+          hadError = true; console.error('[导入upsert异常]', t, e.message);
+        }
+
+        // products 的布料用量关联表：先删旧关联再插入，避免重复
+        if (t === 'products') {
+          var pfRows = [];
+          records.forEach(function(p) {
+            if (p.fabricUsages && p.fabricUsages.length) {
+              p.fabricUsages.forEach(function(u) {
+                pfRows.push({ product_id: p.id, fabric_id: u.fabricId, fabric_name: u.fabricName || '', meters_used: parseFloat(u.metersUsed) || 0, user_id: userId });
+              });
+            }
+          });
+          try {
+            var pids = records.map(function(p) { return p.id; });
+            await db.from('product_fabrics').delete().in('product_id', pids);
+            if (pfRows.length) {
+              var pfRes = await db.from('product_fabrics').insert(pfRows);
+              if (pfRes.error) { hadError = true; console.error('[导入product_fabrics]', pfRes.error.message); }
+            }
+          } catch (e) { hadError = true; console.error('[导入product_fabrics异常]', e.message); }
+        }
+
+        // 兜底写本地，保证刷新前后一致
+        try { localStorage.setItem(key, JSON.stringify(records)); } catch (e) {}
+      }
+
       if (imported.data.options) {
         localStorage.setItem('sewing_options', JSON.stringify(imported.data.options));
       }
+
+      // 图片存入本地 IndexedDB
       if (imported.images) {
         var promises = [];
         for (var k in imported.images) { promises.push(ImageStore.save(k, imported.images[k])); }
-        return Promise.all(promises).then(function() { return true; });
+        try { await Promise.all(promises); } catch (e) { console.error('[导入图片]', e); }
       }
-      return Promise.resolve(true);
+
+      if (hadError) {
+        if (window.Toast) Toast.show('⚠️ 部分数据未能导入云端，请检查网络后重试', 'error');
+        return false;
+      }
+      return true;
     } catch(e) {
       console.error('importAll error:', e);
-      return Promise.resolve(false);
+      return false;
     }
   },
 

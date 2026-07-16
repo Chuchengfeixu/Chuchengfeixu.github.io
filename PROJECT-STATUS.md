@@ -60,8 +60,10 @@
 - [ ] 添加数据统计分析图表
 - [ ] 优化图片上传和管理界面
 
-### 🐛 待修复 Bug
-- [ ] 导入数据后刷新丢失 → 导入的数据没有真正写入 Supabase（排查中）
+### 🐛 Bug 修复记录
+- [x] 导入数据后刷新丢失 → 已修复
+  - 根因：旧 importAll 是"发射后不管"，触发异步写入后立即返回成功；且用 insert 遇重复 id 静默失败，数据从未真正入库，刷新后 loadFromCloud 拉云端即丢失
+  - 修复：importAll 改为 async，逐表批量 upsert（按主键冲突则更新），await 等云端真正写完再返回真实结果；products 关联表先删后插；兜底写本地；失败明确提示
 
 ## 管理员账号
 当前注册账号已设置 `profiles.role = 'admin'`
@@ -109,6 +111,13 @@ git push
 - 如果文件冲突，提醒用户处理冲突后再推送
 
 ## 最近更新记录
+### [2026-07-16] - 修复导入数据不入库的 bug
+**主要内容**:
+- 重写 data-layer.js 的 importAll：async + 逐表批量 upsert + await 真正写完
+- 解决重复 id 导入冲突（insert → upsert）、导入结果如实反馈
+- products 关联表 product_fabrics 先删后插避免重复；兜底写本地
+**Git状态**: ✅ 已推送
+
 ### [2026-07-09] - 离线数据同步（方案二）
 **主要内容**:
 - 在 data-layer.js 中为所有云端写操作（add/update/remove，含 product_fabrics）加入失败处理
