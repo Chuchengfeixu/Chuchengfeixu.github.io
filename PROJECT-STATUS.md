@@ -57,8 +57,26 @@
   - 云端写操作失败时兜底写回 localStorage，避免数据静默丢失
   - 失败时弹 Toast 提示用户（带防抖）
   - 注：不含自动重放队列，联网后需重新编辑保存一次才会同步上云
-- [ ] 添加数据统计分析图表
+- [ ] 添加数据统计分析图表（并入 community-and-monetization spec 的 Pro 付费点）
 - [ ] 优化图片上传和管理界面
+- [ ] **制品-辅料联动（独立后续功能）**
+  - 背景：目前制品仅通过 product_fabrics 关联布料，辅料(notions)是独立库存表，无"制品用了哪些辅料"的关联
+  - 需要：新增 product_notions 关联表 + 制品表单增加"添加辅料用量"交互（类比现有布料用量）
+  - 价值：让成本核算能纳入辅料（当前 community-and-monetization spec 的成本口径仅算布料 fabric-only，待此功能上线后升级为 fabric+notion）
+  - 优先级：中，牵扯制品录入流程，与社区/付费主线独立，单独排期
+
+### 🚧 进行中的 Spec
+- [ ] **community-and-monetization**（社区作品展示 + 付费功能）
+  - 需求 ✅ / 设计 ✅ / 任务执行中（9/18）
+  - 模块一：制品一键发布为公开作品、Feed 浏览、点赞、收藏（快照隔离私有数据）
+  - 模块二：第一批付费点 = 图片月度配额(免费 20 张/月) + 数据统计分析(Pro)
+  - 成本口径：方向 A 仅算布料（fabric.price 为整匹总价，每米单价 = price/meters）
+  - 已完成：
+    - 任务1-3 Supabase 后端（表 showcase_posts/post_likes/post_favorites/image_usage_monthly + RLS + RPC check_and_increment_image_quota/get_image_usage + 计数触发器），SQL 存于 spec/supabase-setup.sql，已在 Supabase 执行验证
+    - 任务4-7 data-layer.js：buildSnapshot/computeCost/resolvePatternPublicInfo、CommunityStore（发布/更新/取消/删除/Feed/详情/我的作品/收藏/点赞/收藏）、QuotaService
+    - 任务8 auth.js：Auth.requirePro(featureKey) 门禁
+    - 任务9 index.html：Paywall 升级引导组件
+  - 待办：任务10（图片上传接入配额，9处上传入口）、11（发布入口）、12（社区Feed）、13（作品详情）、14（我的作品/收藏）、15（统计分析）、16（账户区）、17-18（验证）
 
 ### 🐛 Bug 修复记录
 - [x] 导入数据后刷新丢失 → 已修复

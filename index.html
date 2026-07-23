@@ -3875,6 +3875,46 @@ const Toast = {
  }
 };
 
+/* ========== Paywall 升级引导组件（community-and-monetization 任务9） ========== */
+const Paywall = {
+ // 集中管理各付费点文案（需求 11.3）
+ FEATURES: {
+ 'image-quota': { icon: '🖼️', title: '本月图片额度已用完', desc: '免费版每月可新增 20 张图片。升级 Pro 解锁无限上传。' },
+ 'analytics':   { icon: '📈', title: '数据分析是 Pro 功能', desc: '解锁布料消耗趋势、成本核算、库存周转等深度分析。' }
+ },
+
+ show(featureKey) {
+ var f = this.FEATURES[featureKey] || { icon: '⭐', title: '升级 Pro 解锁', desc: '该功能为 Pro 专属。' };
+ // 移除旧的
+ var old = document.getElementById('paywallOverlay');
+ if (old) old.parentNode.removeChild(old);
+
+ var overlay = document.createElement('div');
+ overlay.id = 'paywallOverlay';
+ overlay.style.cssText = 'position:fixed;inset:0;background:rgba(30,30,30,0.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:9998;display:flex;justify-content:center;align-items:center;padding:20px;';
+
+ var box = document.createElement('div');
+ box.style.cssText = 'background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.18);padding:32px 28px;max-width:380px;width:100%;text-align:center;border:1px solid var(--border);animation:formSlideIn 0.3s ease;';
+ box.innerHTML =
+ '<div style="font-size:44px;margin-bottom:12px;">' + f.icon + '</div>' +
+ '<div style="font-size:18px;font-weight:700;color:var(--purple-dark);margin-bottom:8px;">' + f.title + '</div>' +
+ '<div style="font-size:13.5px;color:var(--text-light);line-height:1.7;margin-bottom:22px;">' + f.desc + '</div>' +
+ '<button id="paywallUpgrade" class="btn btn-purple" style="width:100%;margin-bottom:10px;">了解 Pro ⭐</button>' +
+ '<button id="paywallClose" class="btn btn-gray" style="width:100%;">暂不需要</button>';
+ overlay.appendChild(box);
+ document.body.appendChild(overlay);
+
+ function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+ overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+ document.getElementById('paywallClose').addEventListener('click', close);
+ document.getElementById('paywallUpgrade').addEventListener('click', function() {
+ close();
+ // TODO: 接入实际升级/充值流程（后续批次）；当前先提示
+ if (window.Toast) Toast.show('Pro 升级通道即将开放 🙌', 'success');
+ });
+ }
+};
+
 /* ========== Router 模块 ========== */
 const Router = {
  pages: ['home', 'fabric', 'product', 'pattern', 'notion', 'todo', 'dashboard', 'print'],

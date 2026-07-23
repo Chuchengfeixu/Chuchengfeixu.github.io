@@ -490,6 +490,213 @@ window.Store = {
   }
 };
 
+// =====================================================================
+// 社区作品展示 + 付费配额（community-and-monetization spec）
+// =====================================================================
+
+// 免费用户图片月度配额（需求 8.6：集中配置，与后端 RPC 的 v_limit 保持一致）
+var QUOTA_CONFIG = { FREE_MONTHLY_IMAGES: 20 };
+
+// --- 任务 4：快照聚合与成本计算辅助 ---
+
+// 成本口径（方向 A：仅布料）
+// 每米单价 = 布料总价 / 布料总米数（fabric.price 是整匹总价，非每米单价）
+// price / metersUsed 缺失均按 0；布料总米数为 0 时该项计 0，避免除零；总额恒为数值
+function computeCost(product) {
+  var total = 0;
+  (product.fabricUsages || []).forEach(function(u) {
+    var fabric = window.Store ? Store.getById('sewing_fabrics', u.fabricId) : null;
+    var totalPrice = (fabric && parseFloat(fabric.price)) || 0;
+    var totalMeters = (fabric && parseFloat(fabric.meters)) || 0;
+    var unitPrice = totalMeters > 0 ? (totalPrice / totalMeters) : 0;
+    var used = parseFloat(u.metersUsed) || 0;
+    total += unitPrice * used;
+  });
+  return { total: Math.round(total * 100) / 100, currency: 'CNY', basis: 'fabric-only' };
+}
+
+// 从制品的 patternId 解析纸样公开信息（名称/品牌/编码）
+function resolvePatternPublicInfo(product) {
+  if (!product.patternId || !window.Store) return null;
+  var p = Store.getById('sewing_patterns', product.patternId);
+  if (!p) {
+    // 制品上冗余的纸样字段兜底
+    if (product.patternCode || product.patternType) {
+      return { name: product.patternType || '', brand: '', code: product.patternCode || '' };
+    }
+    return null;
+  }
+  return { name: p.name || '', brand: p.brand || '', code: p.code || '' };
+}
+
+// 聚合公开字段快照（发布/更新共用）
+// options: { title, description, showCost }
+function buildSnapshot(product, options) {
+  options = options || {};
+  return {
+    product_id: product.id,
+    title: options.title || product.name || '',
+    description: options.description || '',
+    image_url: product.image || '',
+    category: product.category || '',
+    finish_date: product.completedDate || null,
+    fabrics_snapshot: (product.fabricUsages || []).map(function(u) {
+      return { name: u.fabricName || '', meters: parseFloat(u.metersUsed) || 0 };
+    }),
+    pattern_snapshot: resolvePatternPublicInfo(product),
+    cost_snapshot: options.showCost ? computeCost(product) : null,
+    show_cost: !!options.showCost
+  };
+}
+
+// --- 任务 5 & 6：CommunityStore ---
+
+window.CommunityStore = {
+  // 发布制品为作品
+  publishPost: async function(productId, options) {
+    var userId = getUserId();
+    if (!userId) return { ok: false, needLogin: true };
+    var product = window.Store ? Store.getById('sewing_products', productId) : null;
+    if (!product) return { ok: false, error: '制品不存在' };
+    var snap = buildSnapshot(product, options);
+    snap.user_id = userId;
+    snap.is_public = true;
+    var res = await getDB().from('showcase_posts').insert(snap).select().maybeSingle();
+    if (res.error) { onSyncFail('add', 'showcase_posts', res.error.message); return { ok: false, error: res.error.message }; }
+    return { ok: true, post: res.data };
+  },
+
+  // 更新已发布作品：依据当前制品重新快照，保留互动数据（点赞/收藏不受影响）
+  updatePost: async function(postId, options) {
+    var userId = getUserId();
+    if (!userId) return { ok: false, needLogin: true };
+    // 读取原作品以拿到 product_id
+    var cur = await getDB().from('showcase_posts').select('product_id').eq('id', postId).maybeSingle();
+    if (cur.error || !cur.data) return { ok: false, error: '作品不存在' };
+    var product = window.Store ? Store.getById('sewing_products', cur.data.product_id) : null;
+    if (!product) return { ok: false, error: '原制品已删除，无法更新作品' };
+    var snap = buildSnapshot(product, options);
+    snap.updated_at = new Date().toISOString();
+    var res = await getDB().from('showcase_posts').update(snap).eq('id', postId).select().maybeSingle();
+    if (res.error) { onSyncFail('update', 'showcase_posts', res.error.message); return { ok: false, error: res.error.message }; }
+    return { ok: true, post: res.data };
+  },
+
+  unpublishPost: async function(postId) {
+    var res = await getDB().from('showcase_posts').update({ is_public: false, updated_at: new Date().toISOString() }).eq('id', postId);
+    if (res.error) { onSyncFail('update', 'showcase_posts', res.error.message); return false; }
+    return true;
+  },
+
+  deletePost: async function(postId) {
+    var res = await getDB().from('showcase_posts').delete().eq('id', postId);
+    if (res.error) { onSyncFail('remove', 'showcase_posts', res.error.message); return false; }
+    return true;
+  },
+
+  // 公共 Feed（分页），仅公开作品，按时间倒序
+  getFeed: async function(page, pageSize) {
+    page = page || 0; pageSize = pageSize || 20;
+    var from = page * pageSize, to = from + pageSize - 1;
+    var res = await getDB().from('showcase_posts').select('*')
+      .eq('is_public', true).order('created_at', { ascending: false }).range(from, to);
+    if (res.error) { console.error('[getFeed]', res.error.message); return []; }
+    return res.data || [];
+  },
+
+  getPostDetail: async function(postId) {
+    var res = await getDB().from('showcase_posts').select('*').eq('id', postId).maybeSingle();
+    if (res.error) { console.error('[getPostDetail]', res.error.message); return null; }
+    var post = res.data;
+    if (!post) return null;
+    var uid = getUserId();
+    if (uid) {
+      var likeRes = await getDB().from('post_likes').select('post_id').eq('post_id', postId).eq('user_id', uid).maybeSingle();
+      var favRes = await getDB().from('post_favorites').select('post_id').eq('post_id', postId).eq('user_id', uid).maybeSingle();
+      post._liked = !!(likeRes.data);
+      post._favorited = !!(favRes.data);
+    } else {
+      post._liked = false; post._favorited = false;
+    }
+    return post;
+  },
+
+  getMyPosts: async function() {
+    var uid = getUserId();
+    if (!uid) return [];
+    var res = await getDB().from('showcase_posts').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+    if (res.error) { console.error('[getMyPosts]', res.error.message); return []; }
+    return res.data || [];
+  },
+
+  getMyFavorites: async function() {
+    var uid = getUserId();
+    if (!uid) return [];
+    var favRes = await getDB().from('post_favorites').select('post_id').eq('user_id', uid).order('created_at', { ascending: false });
+    if (favRes.error || !favRes.data || !favRes.data.length) return [];
+    var ids = favRes.data.map(function(f) { return f.post_id; });
+    var res = await getDB().from('showcase_posts').select('*').in('id', ids);
+    if (res.error) { console.error('[getMyFavorites]', res.error.message); return []; }
+    return res.data || [];
+  },
+
+  // 点赞切换：返回 { liked, likeCount }
+  toggleLike: async function(postId) {
+    var uid = getUserId();
+    if (!uid) return { needLogin: true };
+    var existing = await getDB().from('post_likes').select('post_id').eq('post_id', postId).eq('user_id', uid).maybeSingle();
+    if (existing.data) {
+      await getDB().from('post_likes').delete().eq('post_id', postId).eq('user_id', uid);
+    } else {
+      await getDB().from('post_likes').insert({ post_id: postId, user_id: uid });
+    }
+    // 计数由触发器维护，回读最新值
+    var post = await getDB().from('showcase_posts').select('like_count').eq('id', postId).maybeSingle();
+    return { liked: !existing.data, likeCount: post.data ? post.data.like_count : 0 };
+  },
+
+  // 收藏切换：返回 { favorited, favoriteCount }
+  toggleFavorite: async function(postId) {
+    var uid = getUserId();
+    if (!uid) return { needLogin: true };
+    var existing = await getDB().from('post_favorites').select('post_id').eq('post_id', postId).eq('user_id', uid).maybeSingle();
+    if (existing.data) {
+      await getDB().from('post_favorites').delete().eq('post_id', postId).eq('user_id', uid);
+    } else {
+      await getDB().from('post_favorites').insert({ post_id: postId, user_id: uid });
+    }
+    var post = await getDB().from('showcase_posts').select('favorite_count').eq('id', postId).maybeSingle();
+    return { favorited: !existing.data, favoriteCount: post.data ? post.data.favorite_count : 0 };
+  }
+};
+
+// --- 任务 7：QuotaService ---
+
+window.QuotaService = {
+  CONFIG: QUOTA_CONFIG,
+
+  // 上传图片前调用：原子校验并计数 +1。返回 { allowed, used, limit, pro?, reason? }
+  // 网络/RPC 失败时保守拒绝（避免绕过），返回 allowed:false + error
+  checkAndIncrement: async function() {
+    try {
+      var res = await getDB().rpc('check_and_increment_image_quota');
+      if (res.error) return { allowed: false, error: res.error.message };
+      return res.data;
+    } catch (e) {
+      return { allowed: false, error: (e && e.message) || '配额校验失败' };
+    }
+  },
+
+  // 只读查询当月用量，供 UI 展示。返回 { used, limit, pro }
+  getUsageStatus: async function() {
+    try {
+      var res = await getDB().rpc('get_image_usage');
+      if (res.error) return null;
+      return res.data;
+    } catch (e) { return null; }
+  }
+};
+
 // 暴露加载函数
 window.DataLayer = {
   loadFromCloud: loadFromCloud,

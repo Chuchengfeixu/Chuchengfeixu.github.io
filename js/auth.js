@@ -120,6 +120,18 @@ const Auth = {
     return true;
   },
 
+  // 统一的 Pro 功能门禁：是 Pro 放行返回 true；否则弹升级引导并返回 false
+  // featureKey 对应 Paywall.FEATURES 的键（如 'image-quota' / 'analytics'）
+  requirePro(featureKey) {
+    if (this.isPro()) return true;
+    if (window.Paywall && typeof Paywall.show === 'function') {
+      Paywall.show(featureKey);
+    } else if (window.Toast) {
+      Toast.show('该功能为 Pro 专属，升级后解锁', 'warning');
+    }
+    return false;
+  },
+
   escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
