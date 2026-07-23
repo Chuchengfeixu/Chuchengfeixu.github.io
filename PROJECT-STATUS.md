@@ -59,6 +59,11 @@
   - 注：不含自动重放队列，联网后需重新编辑保存一次才会同步上云
 - [ ] 添加数据统计分析图表（并入 community-and-monetization spec 的 Pro 付费点）
 - [ ] 优化图片上传和管理界面
+- [ ] **全局图标统一（方案 A + 中性深灰为主）**
+  - 现状：全局图标为彩色 emoji（🧵✂️📐🧷📊✏️🗑️➕📤👭 等），无法用 CSS 统一上色
+  - 目标：换成一套单色矢量图标（内联 SVG / 图标字体），统一主题色，以中性深灰为主，重点操作可用主题粉
+  - 范围：侧边栏导航、各页标题、卡片操作按钮（编辑/删除/复制/发布）、社区页图标等全局
+  - 注意：改动面大（index.html 7900+ 行），建议分区域逐步替换并随时验证
 - [ ] **制品-辅料联动（独立后续功能）**
   - 背景：目前制品仅通过 product_fabrics 关联布料，辅料(notions)是独立库存表，无"制品用了哪些辅料"的关联
   - 需要：新增 product_notions 关联表 + 制品表单增加"添加辅料用量"交互（类比现有布料用量）
@@ -138,6 +143,23 @@ git push
 - 如果文件冲突，提醒用户处理冲突后再推送
 
 ## 最近更新记录
+### [2026-07-23] - community-and-monetization 主体完成 + 登录相关修复
+**主要内容**:
+- 完成 community-and-monetization spec 代码实现 16/18（详见"进行中的 Spec"）
+  - 后端 SQL（表 + RLS + RPC + 触发器）已在 Supabase 执行
+  - data-layer.js：CommunityStore / QuotaService / 快照与成本计算 / idb 图片转云端
+  - auth.js：requirePro 门禁 + 账户区档位与配额展示
+  - index.html：Paywall、9处图片配额守卫、发布入口、社区页(广场/我的作品/我的收藏)、作品详情、看板 Pro 分析卡片
+- 修复 bug：
+  - window.Auth 未暴露（const 不挂 window）导致 getUserId 恒 null → 发布误判"未登录"；已加 window.Auth = Auth
+  - 窗口切换/token 刷新重复弹"登录成功"；改为按用户 ID 去重 + 单独处理 TOKEN_REFRESHED
+  - 社区图标 🌐→👭；制品发布图标 🌐→📤
+**待办**:
+  - community spec 任务 17-18 手动验证（安全 + 端到端）
+  - ⚠️ 需在 Supabase 建公开 images bucket（社区图片依赖）
+  - 全局图标统一（方案 A + 中性深灰，见"计划中"）
+**Git状态**: ✅ 已推送
+
 ### [2026-07-16] - 修复导入数据不入库的 bug
 **主要内容**:
 - 重写 data-layer.js 的 importAll：async + 逐表批量 upsert + await 真正写完
