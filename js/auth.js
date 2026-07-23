@@ -9,10 +9,16 @@ const Auth = {
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         if (this._initialized) {
-          // 只在初始化之后的登录事件才触发（避免和 getSession 重复）
-          this.currentUser = session.user;
-          this.onLoginSuccess();
+          // 仅当用户实际变化时才当作"新登录"处理
+          // 避免窗口切换 / token 刷新时 supabase 重复派发 SIGNED_IN 导致重复弹"登录成功"
+          if (!this.currentUser || this.currentUser.id !== session.user.id) {
+            this.currentUser = session.user;
+            this.onLoginSuccess();
+          }
         }
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // token 刷新只更新引用，不提示、不重复加载
+        this.currentUser = session.user;
       } else if (event === 'SIGNED_OUT') {
         this.currentUser = null;
         this.currentProfile = null;
@@ -150,3 +156,7 @@ const Auth = {
     return div.innerHTML;
   }
 };
+
+// 暴露到 window，供 data-layer.js 的 getUserId() 等通过 window.Auth 访问
+// （const 声明不会自动挂到 window 上，缺此会导致 getUserId 恒为 null → 发布等操作误判未登录）
+window.Auth = Auth;
