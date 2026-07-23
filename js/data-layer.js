@@ -529,8 +529,28 @@ function resolvePatternPublicInfo(product) {
   return { name: p.name || '', brand: p.brand || '', code: p.code || '' };
 }
 
+// 将制品图片解析为"公开可访问的云端 URL"
+// 社区作品会被其他用户浏览，本地 IndexedDB(idb:) 图片对他人不可见，必须上传到 Supabase Storage
+async function resolvePublicImageUrl(image) {
+  if (!image) return '';
+  if (/^https?:\/\//i.test(image)) return image;           // 已是云端 URL
+  if (image.indexOf('idb:') === 0 && window.ImageStore) {
+    var key = image.slice(4);
+    var base64 = await ImageStore.get(key);
+    if (!base64) return '';
+    var url = await ImageStore.saveToCloud(base64);         // 上传到 Storage 取公开 URL
+    return url || '';
+  }
+  if (image.indexOf('data:') === 0 && window.ImageStore) {  // 直接是 base64
+    var u = await ImageStore.saveToCloud(image);
+    return u || '';
+  }
+  return '';
+}
+
 // 聚合公开字段快照（发布/更新共用）
 // options: { title, description, showCost }
+// 注意：image_url 需另行异步解析为云端 URL（见 publishPost/updatePost）
 function buildSnapshot(product, options) {
   options = options || {};
   return {
@@ -559,6 +579,7 @@ window.CommunityStore = {
     var product = window.Store ? Store.getById('sewing_products', productId) : null;
     if (!product) return { ok: false, error: '制品不存在' };
     var snap = buildSnapshot(product, options);
+    snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
     snap.user_id = userId;
     snap.is_public = true;
     var res = await getDB().from('showcase_posts').insert(snap).select().maybeSingle();
@@ -576,6 +597,7 @@ window.CommunityStore = {
     var product = window.Store ? Store.getById('sewing_products', cur.data.product_id) : null;
     if (!product) return { ok: false, error: '原制品已删除，无法更新作品' };
     var snap = buildSnapshot(product, options);
+    snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
     snap.updated_at = new Date().toISOString();
     var res = await getDB().from('showcase_posts').update(snap).eq('id', postId).select().maybeSingle();
     if (res.error) { onSyncFail('update', 'showcase_posts', res.error.message); return { ok: false, error: res.error.message }; }
@@ -583,7 +605,12 @@ window.CommunityStore = {
   },
 
   unpublishPost: async function(postId) {
-    var res = await getDB().from('showcase_posts').update({ is_public: false, updated_at: new Date().toISOString() }).eq('id', postId);
+    return this.setPublic(postId, false);
+  },
+
+  // 设置作品可见性（true 重新公开 / false 取消公开）
+  setPublic: async function(postId, isPublic) {
+    var res = await getDB().from('showcase_posts').update({ is_public: !!isPublic, updated_at: new Date().toISOString() }).eq('id', postId);
     if (res.error) { onSyncFail('update', 'showcase_posts', res.error.message); return false; }
     return true;
   },

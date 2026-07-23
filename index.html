@@ -2523,6 +2523,29 @@ line-height: 1;
  }
  }
 
+ /* ===== 社区（community-and-monetization） ===== */
+ .community-tabs { display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid var(--border); }
+ .community-tab { padding:8px 16px; border:none; background:none; cursor:pointer; font-size:14px; font-weight:600; color:var(--text-light); border-bottom:2px solid transparent; transition:all var(--transition); }
+ .community-tab:hover { color:var(--text); }
+ .community-tab.active { color:var(--blue-dark); border-bottom-color:var(--blue); }
+ .community-feed { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; }
+ .post-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; cursor:pointer; transition:all var(--transition); display:flex; flex-direction:column; }
+ .post-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); }
+ .post-card-img { width:100%; height:180px; object-fit:cover; background:#F5F4F2; display:block; }
+ .post-card-img-ph { width:100%; height:180px; background:linear-gradient(135deg,#EDE8F5,#F0ECF5); display:flex; align-items:center; justify-content:center; font-size:32px; color:var(--purple); }
+ .post-card-body { padding:12px; display:flex; flex-direction:column; gap:6px; flex:1; }
+ .post-card-title { font-size:14px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+ .post-card-meta { display:flex; gap:12px; font-size:12px; color:var(--text-light); margin-top:auto; }
+ .community-empty { text-align:center; padding:56px 20px; color:var(--text-light); font-size:15px; line-height:2; }
+ .post-detail-overlay { position:fixed; inset:0; background:rgba(30,30,30,0.35); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); z-index:300; display:flex; justify-content:center; align-items:flex-start; padding:40px 16px; overflow-y:auto; }
+ .post-detail-box { background:#fff; border-radius:18px; box-shadow:0 12px 40px rgba(0,0,0,0.15); max-width:560px; width:100%; overflow:hidden; border:1px solid var(--border); animation:formSlideIn 0.3s ease; }
+ .post-detail-img { width:100%; max-height:420px; object-fit:cover; display:block; background:#F5F4F2; }
+ .post-detail-content { padding:24px; }
+ .post-detail-info-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13.5px; border-bottom:1px dashed var(--border); }
+ .post-detail-actions { display:flex; gap:12px; margin-top:18px; }
+ .post-action-btn { flex:1; padding:10px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer; font-size:14px; font-weight:600; color:var(--text); transition:all var(--transition); }
+ .post-action-btn.active { background:var(--pink-light); border-color:var(--pink); color:var(--pink); }
+
  </style>
 </head>
 <body>
@@ -2596,6 +2619,7 @@ line-height: 1;
  <li><a href="#todo" data-page="todo">📋 待做列表</a></li>
  <li><a href="#dashboard" data-page="dashboard">📊 看板</a></li>
  <li><a href="#print" data-page="print">🖨️ 打印</a></li>
+ <li><a href="#community" data-page="community">🌐 社区</a></li>
  </ul>
  <div class="sidebar-actions">
  <div id="sidebarUserInfo" class="sidebar-user-info"></div>
@@ -3229,6 +3253,17 @@ line-height: 1;
 <div class="print-preview-title" id="printPreviewTitle">📋 打印预览</div>
 <div class="print-slip-grid" id="printSlipGrid"></div>
 </div>
+</div>
+</section>
+<section id="page-community" class="page">
+<div class="page-wrapper">
+<h2 class="page-title">🌐 社区</h2>
+<div class="community-tabs" id="communityTabs">
+<button class="community-tab active" data-tab="feed">🖼️ 广场</button>
+<button class="community-tab" data-tab="mine">📢 我的作品</button>
+<button class="community-tab" data-tab="fav">⭐ 我的收藏</button>
+</div>
+<div id="communityContent" class="community-content"></div>
 </div>
 </section>
 
@@ -3915,9 +3950,26 @@ const Paywall = {
  }
 };
 
+/* ========== 图片上传配额守卫（community-and-monetization 任务10） ==========
+ 用法：把用户上传图片的处理逻辑放进 onAllowed 回调。
+ 会先调后端 RPC 原子校验并计数：允许则执行 onAllowed；免费超额弹 Paywall；网络异常提示重试。
+ 导入/迁移等系统写图不走此守卫，不占配额。 */
+function guardImageUpload(onAllowed) {
+ if (!window.QuotaService) { onAllowed(); return; }
+ QuotaService.checkAndIncrement().then(function(r) {
+ if (r && r.allowed) {
+ onAllowed();
+ } else if (r && r.reason === 'quota_exceeded') {
+ if (window.Paywall) Paywall.show('image-quota');
+ } else {
+ if (window.Toast) Toast.show('无法校验图片额度，请稍后重试', 'error');
+ }
+ });
+}
+
 /* ========== Router 模块 ========== */
 const Router = {
- pages: ['home', 'fabric', 'product', 'pattern', 'notion', 'todo', 'dashboard', 'print'],
+ pages: ['home', 'fabric', 'product', 'pattern', 'notion', 'todo', 'dashboard', 'print', 'community'],
  defaultPage: 'home',
  _onNavigateCallbacks: [],
 
@@ -4094,6 +4146,7 @@ const FabricController = {
  var blob = items[i].getAsFile();
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  FabricController.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
@@ -4102,6 +4155,7 @@ const FabricController = {
  document.getElementById('fabricImagePreview').style.display = 'block';
  document.getElementById('fabricImageArea').querySelector('.upload-hint').textContent = '已粘贴图片，点击更换';
  FabricController.performOCR(ev.target.result);
+ });
  };
  reader.readAsDataURL(blob);
  break;
@@ -4267,6 +4321,7 @@ const FabricController = {
  }
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  self.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
@@ -4275,6 +4330,7 @@ const FabricController = {
  document.getElementById('fabricImagePreview').style.display = 'block';
  document.getElementById('fabricImageArea').querySelector('.upload-hint').textContent = '已选择图片，点击更换';
  self.performOCR(self.imageBase64);
+ });
  };
  reader.readAsDataURL(file);
  },
@@ -4890,6 +4946,7 @@ const ProductController = {
  var blob = items[i].getAsFile();
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  ProductController.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
@@ -4897,6 +4954,7 @@ const ProductController = {
  document.getElementById('productImageThumb').src = ev.target.result;
  document.getElementById('productImagePreview').style.display = 'block';
  document.getElementById('productImageArea').querySelector('.upload-hint').textContent = '已粘贴照片，点击更换';
+ });
  };
  reader.readAsDataURL(blob);
  break;
@@ -5179,6 +5237,7 @@ return;
 }
 var reader = new FileReader();
 reader.onload = function(ev) {
+guardImageUpload(function() {
 self.imageBase64 = ev.target.result;
 var imageKey = 'img_' + generateUUID();
 ImageStore.save(imageKey, ev.target.result);
@@ -5186,6 +5245,7 @@ self.imageKey = 'idb:' + imageKey;
 document.getElementById('productImageThumb').src = self.imageBase64;
 document.getElementById('productImagePreview').style.display = 'block';
 document.getElementById('productImageArea').querySelector('.upload-hint').textContent = '已选择照片，点击更换';
+});
 };
 reader.readAsDataURL(file);
 },
@@ -5511,6 +5571,61 @@ ProductController.renderList();
 });
 },
 
+/* 发布为作品（community-and-monetization 任务11） */
+openPublishDialog(productId) {
+if (!window.Auth || !Auth.currentUser) { Toast.show('请先登录', 'error'); return; }
+var product = Store.getById(Store.KEYS.PRODUCTS, productId);
+if (!product) { Toast.show('制品不存在', 'error'); return; }
+
+var old = document.getElementById('publishDialogOverlay');
+if (old) old.parentNode.removeChild(old);
+
+var noImageHint = product.image ? '' :
+'<div style="font-size:12px;color:var(--coral);margin-bottom:10px;">建议先为该制品添加图片，作品展示效果更好。</div>';
+
+var overlay = document.createElement('div');
+overlay.id = 'publishDialogOverlay';
+overlay.style.cssText = 'position:fixed;inset:0;background:rgba(30,30,30,0.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:9997;display:flex;justify-content:center;align-items:center;padding:20px;';
+var box = document.createElement('div');
+box.style.cssText = 'background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.15);padding:28px;max-width:440px;width:100%;border:1px solid var(--border);animation:formSlideIn 0.3s ease;';
+box.innerHTML =
+'<div style="font-size:18px;font-weight:700;color:var(--blue-dark);margin-bottom:18px;">🌐 发布为作品</div>' +
+noImageHint +
+'<div class="form-group"><label>作品标题</label><input type="text" id="publishTitle" value="' + this.escapeHtml(product.name || '') + '"></div>' +
+'<div class="form-group"><label>作品描述（可选）</label><input type="text" id="publishDesc" placeholder="说点什么，比如制作心得"></div>' +
+'<label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--text);margin:6px 0 18px;cursor:pointer;">' +
+'<input type="checkbox" id="publishShowCost" style="width:16px;height:16px;">公开成本信息（默认不公开）</label>' +
+'<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+'<button class="btn btn-gray" id="publishCancel">取消</button>' +
+'<button class="btn btn-purple" id="publishConfirm">发布</button></div>';
+overlay.appendChild(box);
+document.body.appendChild(overlay);
+
+function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+document.getElementById('publishCancel').addEventListener('click', close);
+document.getElementById('publishConfirm').addEventListener('click', function() {
+var options = {
+title: document.getElementById('publishTitle').value.trim(),
+description: document.getElementById('publishDesc').value.trim(),
+showCost: document.getElementById('publishShowCost').checked
+};
+var btn = this; btn.disabled = true; btn.textContent = '发布中...';
+CommunityStore.publishPost(productId, options).then(function(res) {
+if (res && res.ok) {
+Toast.show('作品已发布 🎉', 'success');
+close();
+} else if (res && res.needLogin) {
+Toast.show('请先登录', 'error');
+btn.disabled = false; btn.textContent = '发布';
+} else {
+Toast.show('发布失败：' + ((res && res.error) || '未知错误'), 'error');
+btn.disabled = false; btn.textContent = '发布';
+}
+});
+});
+},
+
 duplicateProduct(id) {
 var product = Store.getById(Store.KEYS.PRODUCTS, id);
 if (!product) return;
@@ -5642,6 +5757,7 @@ html += '<div class="product-card-info">';
 html += '<div class="product-card-header">';
 html += '<span class="product-card-name">' + self.escapeHtml(product.name) + '</span>';
 html += '<div class="product-card-actions">';
+html += '<button class="btn btn-icon" style="color:var(--blue-dark)" onclick="ProductController.openPublishDialog(\'' + product.id + '\')" title="发布为作品">🌐</button>';
 html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">➕</button>';
 html += '<button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')"title="编辑">✏️</button>';
 html += '<button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')"title="删除">🗑️</button>';
@@ -5735,6 +5851,7 @@ const TodoController = {
  }
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  self.todoImageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
@@ -5742,6 +5859,7 @@ const TodoController = {
  document.getElementById('todoFormImageThumb').src = self.todoImageBase64;
  document.getElementById('todoFormImagePreview').style.display = 'block';
  document.getElementById('todoFormImageArea').querySelector('.upload-hint').textContent = '已选择图片，点击更换';
+ });
  };
  reader.readAsDataURL(file);
  },
@@ -6170,6 +6288,7 @@ const DashboardController = {
  var container = document.getElementById('dashboardContent');
 
  var html = '<div class="dashboard-grid">';
+ html += this.renderProAnalytics(fabrics, products);
  html += this.renderFabricGallery(fabrics, products);
  html += this.renderMonthlyTrend(fabrics, products);
  html += this.renderProductGallery(products);
@@ -6192,6 +6311,50 @@ const DashboardController = {
  if (imgEl) { loadIdbImage(imgEl, p.image); }
  }
  });
+ },
+
+ /* Pro 数据分析卡片（community-and-monetization 任务15） */
+ renderProAnalytics(fabrics, products) {
+ var isPro = window.Auth && Auth.isPro();
+ var html = '<div class="dashboard-card full-width" style="border-top-color:var(--purple);">';
+ html += '<div class="dashboard-card-title" style="color:var(--purple-dark);">📈 数据分析 <span style="font-size:12px;color:var(--purple);">Pro</span></div>';
+
+ if (!isPro) {
+ // 免费用户：预览 + 升级引导（需求 9.2）
+ html += '<div style="position:relative;">';
+ html += '<div style="filter:blur(4px);opacity:0.5;pointer-events:none;">';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">总库存成本</span><span class="dashboard-stat-value">¥****</span></div>';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">已消耗布料成本</span><span class="dashboard-stat-value">¥****</span></div>';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">库存周转率</span><span class="dashboard-stat-value">**%</span></div>';
+ html += '</div>';
+ html += '<div style="text-align:center;margin-top:14px;"><button class="btn btn-purple" onclick="Paywall.show(\'analytics\')">⭐ 升级 Pro 解锁数据分析</button></div>';
+ html += '</div></div>';
+ return html;
+ }
+
+ // Pro 用户：真实计算
+ var totalStock = 0, consumedCost = 0, totalMeters = 0, usedMeters = 0;
+ fabrics.forEach(function(f) {
+ totalStock += parseFloat(f.price) || 0;
+ totalMeters += parseFloat(f.meters) || 0;
+ });
+ products.forEach(function(p) {
+ (p.fabricUsages || []).forEach(function(u) {
+ var fb = Store.getById(Store.KEYS.FABRICS, u.fabricId);
+ var tp = (fb && parseFloat(fb.price)) || 0;
+ var tm = (fb && parseFloat(fb.meters)) || 0;
+ var used = parseFloat(u.metersUsed) || 0;
+ usedMeters += used;
+ consumedCost += (tm > 0 ? (tp / tm) : 0) * used;
+ });
+ });
+ var turnover = totalMeters > 0 ? Math.round(usedMeters / totalMeters * 1000) / 10 : 0;
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">总库存成本</span><span class="dashboard-stat-value">¥' + totalStock.toFixed(2) + '</span></div>';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">已消耗布料成本</span><span class="dashboard-stat-value">¥' + (Math.round(consumedCost * 100) / 100).toFixed(2) + '</span></div>';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">已用 / 总米数</span><span class="dashboard-stat-value">' + (Math.round(usedMeters * 10) / 10) + ' / ' + (Math.round(totalMeters * 10) / 10) + ' 米</span></div>';
+ html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">库存周转率</span><span class="dashboard-stat-value">' + turnover + '%</span></div>';
+ html += '</div>';
+ return html;
  },
 
  renderFabricStats(fabrics, products) {
@@ -6955,12 +7118,14 @@ const PatternController = {
  var blob = items[i].getAsFile();
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  PatternController.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
  PatternController.imageKey = 'idb:' + imageKey;
  document.getElementById('patternFormImageThumb').src = ev.target.result;
  document.getElementById('patternFormImagePreview').style.display = 'block';
+ });
  };
  reader.readAsDataURL(blob);
  break;
@@ -7017,12 +7182,14 @@ const PatternController = {
  if (!file.type.startsWith('image/')) { Toast.show('请选择图片文件', 'error'); return; }
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  self.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
  self.imageKey = 'idb:' + imageKey;
  document.getElementById('patternFormImageThumb').src = self.imageBase64;
  document.getElementById('patternFormImagePreview').style.display = 'block';
+ });
  };
  reader.readAsDataURL(file);
  },
@@ -7195,12 +7362,14 @@ const NotionController = {
  var blob = items[i].getAsFile();
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  NotionController.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
  NotionController.imageKey = 'idb:' + imageKey;
  document.getElementById('notionFormImageThumb').src = ev.target.result;
  document.getElementById('notionFormImagePreview').style.display = 'block';
+ });
  };
  reader.readAsDataURL(blob);
  break;
@@ -7257,12 +7426,14 @@ const NotionController = {
  if (!file.type.startsWith('image/')) { Toast.show('请选择图片文件', 'error'); return; }
  var reader = new FileReader();
  reader.onload = function(ev) {
+ guardImageUpload(function() {
  self.imageBase64 = ev.target.result;
  var imageKey = 'img_' + generateUUID();
  ImageStore.save(imageKey, ev.target.result);
  self.imageKey = 'idb:' + imageKey;
  document.getElementById('notionFormImageThumb').src = self.imageBase64;
  document.getElementById('notionFormImagePreview').style.display = 'block';
+ });
  };
  reader.readAsDataURL(file);
  },
@@ -7892,6 +8063,187 @@ function migrateImagesToIDB() {
  });
 }
 
+/* ========== CommunityController 社区（任务 12/13/14） ========== */
+const CommunityController = {
+ currentTab: 'feed',
+ _bound: false,
+
+ init() {
+ var self = this;
+ var tabs = document.getElementById('communityTabs');
+ if (tabs && !this._bound) {
+ tabs.addEventListener('click', function(e) {
+ var btn = e.target.closest('.community-tab');
+ if (!btn) return;
+ var tab = btn.getAttribute('data-tab');
+ self.switchTab(tab);
+ });
+ this._bound = true;
+ }
+ Router.onNavigate(function(page) {
+ if (page === 'community') self.render();
+ });
+ },
+
+ switchTab(tab) {
+ this.currentTab = tab;
+ document.querySelectorAll('#communityTabs .community-tab').forEach(function(b) {
+ b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+ });
+ this.render();
+ },
+
+ render() {
+ var container = document.getElementById('communityContent');
+ if (!container) return;
+ container.innerHTML = '<div class="community-empty">加载中...</div>';
+ var self = this;
+ var loader = this.currentTab === 'mine' ? CommunityStore.getMyPosts()
+ : this.currentTab === 'fav' ? CommunityStore.getMyFavorites()
+ : CommunityStore.getFeed(0, 30);
+ loader.then(function(posts) { self.renderCards(posts, container); });
+ },
+
+ renderCards(posts, container) {
+ var self = this;
+ if (!posts || !posts.length) {
+ var msg = this.currentTab === 'mine' ? '还没有发布作品。去"制品管理"点 🌐 发布第一个作品吧～'
+ : this.currentTab === 'fav' ? '还没有收藏任何作品。'
+ : '还没有公开作品，快来发布第一个！';
+ container.innerHTML = '<div class="community-empty">' + msg + '</div>';
+ return;
+ }
+ var html = '<div class="community-feed">';
+ posts.forEach(function(p) {
+ html += '<div class="post-card" onclick="CommunityController.openDetail(\'' + p.id + '\')">';
+ if (p.image_url) {
+ html += '<img class="post-card-img" src="' + self.escapeAttr(p.image_url) + '" alt="">';
+ } else {
+ html += '<div class="post-card-img-ph">✂️</div>';
+ }
+ html += '<div class="post-card-body">';
+ html += '<div class="post-card-title">' + self.escapeHtml(p.title || '未命名') + '</div>';
+ html += '<div class="post-card-meta"><span>❤ ' + (p.like_count || 0) + '</span><span>⭐ ' + (p.favorite_count || 0) + '</span>';
+ if (self.currentTab === 'mine' && !p.is_public) html += '<span style="color:var(--coral);">已隐藏</span>';
+ html += '</div>';
+ html += '</div></div>';
+ });
+ html += '</div>';
+ container.innerHTML = html;
+ },
+
+ openDetail(postId) {
+ var self = this;
+ CommunityStore.getPostDetail(postId).then(function(post) {
+ if (!post) { Toast.show('作品不存在或已删除', 'error'); return; }
+ self._renderDetail(post);
+ });
+ },
+
+ _renderDetail(post) {
+ var self = this;
+ var old = document.getElementById('postDetailOverlay');
+ if (old) old.parentNode.removeChild(old);
+
+ var isOwner = window.Auth && Auth.currentUser && Auth.currentUser.id === post.user_id;
+
+ var info = '';
+ (post.fabrics_snapshot || []).forEach(function(f) {
+ info += '<div class="post-detail-info-row"><span>🧵 ' + self.escapeHtml(f.name || '布料') + '</span><span>' + (f.meters || 0) + ' 米</span></div>';
+ });
+ if (post.pattern_snapshot && post.pattern_snapshot.name) {
+ var pat = post.pattern_snapshot;
+ info += '<div class="post-detail-info-row"><span>📐 纸样</span><span>' + self.escapeHtml(pat.name) + (pat.brand ? ' / ' + self.escapeHtml(pat.brand) : '') + '</span></div>';
+ }
+ if (post.show_cost && post.cost_snapshot) {
+ info += '<div class="post-detail-info-row"><span>💰 成本</span><span>¥' + (post.cost_snapshot.total || 0) + '</span></div>';
+ }
+ if (post.category) {
+ info += '<div class="post-detail-info-row"><span>分类</span><span>' + self.escapeHtml(post.category) + '</span></div>';
+ }
+
+ var ownerBtns = isOwner
+ ? '<div style="display:flex;gap:10px;margin-top:12px;">' +
+ '<button class="btn btn-gray btn-sm" onclick="CommunityController.updateMyPost(\'' + post.id + '\')">更新快照</button>' +
+ '<button class="btn btn-gray btn-sm" onclick="CommunityController.togglePublic(\'' + post.id + '\',' + (post.is_public ? 'false' : 'true') + ')">' + (post.is_public ? '取消公开' : '重新公开') + '</button>' +
+ '<button class="btn btn-danger btn-sm" onclick="CommunityController.deleteMyPost(\'' + post.id + '\')">删除</button></div>'
+ : '';
+
+ var overlay = document.createElement('div');
+ overlay.id = 'postDetailOverlay';
+ overlay.className = 'post-detail-overlay';
+ var box = document.createElement('div');
+ box.className = 'post-detail-box';
+ var imgHtml = post.image_url ? '<img class="post-detail-img" src="' + self.escapeAttr(post.image_url) + '" alt="">' : '';
+ box.innerHTML = imgHtml +
+ '<div class="post-detail-content">' +
+ '<div style="font-size:19px;font-weight:700;color:var(--text);margin-bottom:6px;">' + self.escapeHtml(post.title || '未命名') + '</div>' +
+ (post.description ? '<div style="font-size:13.5px;color:var(--text-light);line-height:1.7;margin-bottom:14px;">' + self.escapeHtml(post.description) + '</div>' : '') +
+ info +
+ '<div class="post-detail-actions">' +
+ '<button class="post-action-btn' + (post._liked ? ' active' : '') + '" id="pdLike">❤ 点赞 <span id="pdLikeCount">' + (post.like_count || 0) + '</span></button>' +
+ '<button class="post-action-btn' + (post._favorited ? ' active' : '') + '" id="pdFav">⭐ 收藏 <span id="pdFavCount">' + (post.favorite_count || 0) + '</span></button>' +
+ '</div>' + ownerBtns +
+ '<button class="btn btn-gray" style="width:100%;margin-top:14px;" id="pdClose">关闭</button>' +
+ '</div>';
+ overlay.appendChild(box);
+ document.body.appendChild(overlay);
+
+ function close() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+ overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+ document.getElementById('pdClose').addEventListener('click', close);
+
+ document.getElementById('pdLike').addEventListener('click', function() {
+ var btn = this;
+ CommunityStore.toggleLike(post.id).then(function(r) {
+ if (r && r.needLogin) { Toast.show('请先登录', 'error'); return; }
+ btn.classList.toggle('active', r.liked);
+ document.getElementById('pdLikeCount').textContent = r.likeCount;
+ });
+ });
+ document.getElementById('pdFav').addEventListener('click', function() {
+ var btn = this;
+ CommunityStore.toggleFavorite(post.id).then(function(r) {
+ if (r && r.needLogin) { Toast.show('请先登录', 'error'); return; }
+ btn.classList.toggle('active', r.favorited);
+ document.getElementById('pdFavCount').textContent = r.favoriteCount;
+ });
+ });
+ },
+
+ updateMyPost(postId) {
+ CommunityStore.updatePost(postId, {}).then(function(res) {
+ if (res && res.ok) { Toast.show('作品已按最新制品更新', 'success'); }
+ else { Toast.show('更新失败：' + ((res && res.error) || ''), 'error'); }
+ });
+ },
+
+ togglePublic(postId, makePublic) {
+ var self = this;
+ CommunityStore.setPublic(postId, makePublic).then(function(ok) {
+ if (ok) {
+ Toast.show(makePublic ? '已重新公开' : '已取消公开', 'success');
+ var o = document.getElementById('postDetailOverlay'); if (o) o.remove();
+ self.render();
+ } else {
+ Toast.show('操作失败', 'error');
+ }
+ });
+ },
+
+ deleteMyPost(postId) {
+ var self = this;
+ DeleteConfirm.show('确定删除这个作品吗？点赞收藏也会一并移除，此操作不可撤销。', function() {
+ CommunityStore.deletePost(postId).then(function(ok) {
+ if (ok) { Toast.show('作品已删除', 'success'); var o=document.getElementById('postDetailOverlay'); if(o)o.remove(); self.render(); }
+ });
+ });
+ },
+
+ escapeHtml(str) { if (str == null) return ''; var d = document.createElement('div'); d.textContent = String(str); return d.innerHTML; },
+ escapeAttr(str) { return this.escapeHtml(str).replace(/"/g, '&quot;'); }
+};
+
 /* ========== 初始化 ========== */
 document.addEventListener('DOMContentLoaded', function() {
 ImageStore.init().then(function() {
@@ -7918,6 +8270,7 @@ ImageStore.init().then(function() {
  DataController.init();
  OptionManagerController.init();
  CardExpandState.init();
+ CommunityController.init();
 
  // 手机端菜单切换
  var mobileMenuBtn = document.getElementById('mobileMenuBtn');

@@ -71,12 +71,21 @@
   - 模块一：制品一键发布为公开作品、Feed 浏览、点赞、收藏（快照隔离私有数据）
   - 模块二：第一批付费点 = 图片月度配额(免费 20 张/月) + 数据统计分析(Pro)
   - 成本口径：方向 A 仅算布料（fabric.price 为整匹总价，每米单价 = price/meters）
+  - 进度：16/18（代码全部完成，剩 17-18 手动验证）
   - 已完成：
     - 任务1-3 Supabase 后端（表 showcase_posts/post_likes/post_favorites/image_usage_monthly + RLS + RPC check_and_increment_image_quota/get_image_usage + 计数触发器），SQL 存于 spec/supabase-setup.sql，已在 Supabase 执行验证
-    - 任务4-7 data-layer.js：buildSnapshot/computeCost/resolvePatternPublicInfo、CommunityStore（发布/更新/取消/删除/Feed/详情/我的作品/收藏/点赞/收藏）、QuotaService
-    - 任务8 auth.js：Auth.requirePro(featureKey) 门禁
+    - 任务4-7 data-layer.js：buildSnapshot/computeCost/resolvePatternPublicInfo、resolvePublicImageUrl（idb图片转云端）、CommunityStore（发布/更新/取消/公开切换/删除/Feed/详情/我的作品/收藏/点赞/收藏）、QuotaService
+    - 任务8 auth.js：Auth.requirePro(featureKey) 门禁；updateUserDisplay 增加档位到期+本月图片配额展示
     - 任务9 index.html：Paywall 升级引导组件
-  - 待办：任务10（图片上传接入配额，9处上传入口）、11（发布入口）、12（社区Feed）、13（作品详情）、14（我的作品/收藏）、15（统计分析）、16（账户区）、17-18（验证）
+    - 任务10：9处图片上传入口接入 guardImageUpload 配额校验（导入/迁移不占额）
+    - 任务11：制品卡片"发布为作品"入口 + 发布弹窗（标题/描述/成本公开开关）
+    - 任务12-14：社区页（广场/我的作品/我的收藏三标签）+ 路由 + 导航 + 作品详情弹窗（点赞/收藏/更新快照/公开切换/删除）+ CommunityController
+    - 任务15：看板 Pro 数据分析卡片（免费模糊预览+升级引导；Pro 展示库存成本/已消耗成本/周转率）
+    - 任务16：侧边栏账户区展示档位与本月图片配额
+  - 待办（手动验证）：
+    - 任务17 RLS/RPC 安全验证（多账号交叉验证隔离性、配额边界）
+    - 任务18 端到端流程验证（发布→Feed→点赞收藏→取消公开→更新作品→成本保密）
+  - ⚠️ 部署前提：需在 Supabase Storage 创建**公开的 images bucket**，否则社区作品图片对其他用户不可见（发布时会把本地 idb 图片上传到此 bucket）
 
 ### 🐛 Bug 修复记录
 - [x] 导入数据后刷新丢失 → 已修复

@@ -72,12 +72,23 @@ const Auth = {
     if (!el) return;
     const email = this.currentUser?.email || '';
     const nickname = this.currentProfile?.nickname || email.split('@')[0];
-    const tier = this.currentProfile?.tier || 'free';
-    const tierLabel = tier === 'pro' ? '⭐ Pro' : '免费版';
+    const isPro = this.isPro();
+    let tierLabel = isPro ? '⭐ Pro' : '免费版';
+    if (isPro && this.currentProfile?.tier_expires_at) {
+      tierLabel += ' · 至 ' + String(this.currentProfile.tier_expires_at).slice(0, 10);
+    }
     el.innerHTML = `
       <div class="sidebar-user-name">${this.escapeHtml(nickname)}</div>
       <div class="sidebar-user-tier">${tierLabel}</div>
+      <div class="sidebar-user-quota" id="sidebarUserQuota" style="font-size:11px;color:var(--text-light);margin-top:2px;"></div>
     `;
+    // 免费用户展示本月图片配额（需求 16 / 8.5）
+    if (!isPro && window.QuotaService) {
+      QuotaService.getUsageStatus().then(function(s) {
+        var q = document.getElementById('sidebarUserQuota');
+        if (q && s && s.limit > 0) { q.textContent = '本月图片 ' + s.used + ' / ' + s.limit; }
+      });
+    }
   },
 
   // 注册
