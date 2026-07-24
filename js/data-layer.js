@@ -560,9 +560,8 @@ function buildSnapshot(product, options) {
     image_url: product.image || '',
     category: product.category || '',
     finish_date: product.completedDate || null,
-    fabrics_snapshot: (product.fabricUsages || []).map(function(u) {
-      return { name: u.fabricName || '', meters: parseFloat(u.metersUsed) || 0 };
-    }),
+    // 社区仅展示最终成本，不公开布料/辅料明细（避免泄露材料构成）；成本仍由 computeCost 基于本地私有数据计算
+    fabrics_snapshot: [],
     pattern_snapshot: resolvePatternPublicInfo(product),
     cost_snapshot: options.showCost ? computeCost(product) : null,
     show_cost: !!options.showCost

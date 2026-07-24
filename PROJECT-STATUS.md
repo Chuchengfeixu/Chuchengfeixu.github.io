@@ -41,7 +41,7 @@
 ## 已知问题 / TODO
 ### ✅ 已完成
 - [x] 有时切换到布料管理页看不到数据 → 已修复：加入 dataReady 事件机制 + _initialized 防重复
-- [x] 图片存储迁移到 Supabase Storage → 已实现后台自动迁移（需先在 Supabase 创建 images bucket）
+- [x] 图片存储迁移到 Supabase Storage → 已实现后台自动迁移（✅ 公开 images bucket 已在 Supabase 创建）
 - [x] icon-192.png / icon-512.png 缺失 → 已生成
 - [x] scraps 报废记录上云 → 已接入 data-layer 云端同步（需先在 Supabase 创建 scraps 表）
 
@@ -90,7 +90,7 @@
   - 待办（手动验证）：
     - 任务17 RLS/RPC 安全验证（多账号交叉验证隔离性、配额边界）
     - 任务18 端到端流程验证（发布→Feed→点赞收藏→取消公开→更新作品→成本保密）
-  - ⚠️ 部署前提：需在 Supabase Storage 创建**公开的 images bucket**，否则社区作品图片对其他用户不可见（发布时会把本地 idb 图片上传到此 bucket）
+  - ✅ 部署前提已满足：Supabase Storage 公开 images bucket 已创建（2026-07-24，社区作品图片依赖，发布时把本地 idb 图片上传至此）
 
 ### 🐛 Bug 修复记录
 - [x] 导入数据后刷新丢失 → 已修复
@@ -143,6 +143,28 @@ git push
 - 如果文件冲突，提醒用户处理冲突后再推送
 
 ## 最近更新记录
+### [2026-07-24] - bucket 就绪 + 社区图片修复 + 成本只显示总额
+**主要内容**:
+- 公开 `images` bucket 已在 Supabase Storage 创建（满足社区作品图片依赖）
+- 任务 11（制品发布/更新入口）确认已实现，tasks.md 勾选对齐
+- 修复社区图片不显示（两处叠加，均已解决）：
+  - 【主因】`ImageStore` 用 `const` 声明未挂 window，data-layer.js 的 resolvePublicImageUrl
+    通过 `window.ImageStore` 访问得到 undefined → idb 图片上传分支被跳过 → 静默返回空串 →
+    image_url 存空、不报错、不调 saveToCloud。与此前 window.Auth 未暴露同类坑。
+    修复：index.html 在 ImageStore 定义后加 `window.ImageStore = ImageStore;`
+  - 【必要前提】Storage 上传策略：public bucket 仅开放匿名读取，经用户 token 上传仍需
+    `storage.objects` 的 INSERT 策略。已在 supabase-setup.sql 补充 images bucket 的
+    INSERT/SELECT/UPDATE/DELETE 策略（上传限本人目录 `<user_id>/<uuid>.<ext>`），已在 Supabase 执行。
+  ⚠️ 此前发布的作品 image_url 已空，需重新发布 / "更新快照" 才会补图。刷新页面时注意 SW 缓存，必要时强刷。
+- 社区成本口径调整：只显示最终成本，不再公开布料/辅料明细
+  - buildSnapshot 不再写入 fabrics_snapshot（存空数组，避免公开泄露材料构成）
+  - 作品详情 UI 移除布料明细行，仅保留纸样(可选)/成本(show_cost 时)/分类
+**待办**:
+  - 用户在 Supabase 执行新增存储策略 SQL 后，重新发布作品验证社区图片显示
+  - 管理员账号 / 第二账号方案（见"计划中"新增条目）
+  - community spec 任务 17-18 手动验证（RLS/RPC 安全 + 端到端流程）
+**Git状态**: ⏳ 待推送
+
 ### [2026-07-23] - community-and-monetization 主体完成 + 登录相关修复
 **主要内容**:
 - 完成 community-and-monetization spec 代码实现 16/18（详见"进行中的 Spec"）
@@ -156,7 +178,6 @@ git push
   - 社区图标 🌐→👭；制品发布图标 🌐→📤
 **待办**:
   - community spec 任务 17-18 手动验证（安全 + 端到端）
-  - ⚠️ 需在 Supabase 建公开 images bucket（社区图片依赖）
   - 全局图标统一（方案 A + 中性深灰，见"计划中"）
 **Git状态**: ✅ 已推送
 

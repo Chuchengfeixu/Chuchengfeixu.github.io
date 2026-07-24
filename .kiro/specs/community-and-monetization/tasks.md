@@ -55,7 +55,7 @@
 ### 阶段二：数据层与认证（js/data-layer.js, js/auth.js）
 
 - [x] 4. 实现快照聚合与成本计算辅助函数
-  - `buildSnapshot(product, options)`：聚合公开字段（名称/图片/分类/完成日期/布料用量快照/纸样快照），show_cost 时含 cost_snapshot
+  - `buildSnapshot(product, options)`：聚合公开字段（名称/图片/分类/完成日期/纸样快照；不含布料辅料明细），show_cost 时含 cost_snapshot 最终成本
   - `computeCost(product)`：仅布料口径，每米单价 = fabric.price / fabric.meters（防除零），乘用量求和，缺失按 0，总额恒为数值
   - `resolvePatternPublicInfo(product)`：从 patternId 解析纸样公开信息（名称/品牌/编码）
   - _Requirements: 2.1, 2.2, 2.3, 2.4_
@@ -97,7 +97,7 @@
   - _Requirements: 8.1, 8.2, 8.5_
   - _Properties: P3_
 
-- [ ] 11. 制品详情新增发布/更新入口
+- [x] 11. 制品详情新增发布/更新入口
   - "发布为作品 / 更新作品"按钮；成本公开开关（默认关）；可编辑标题/描述
   - 无图片时提示"建议添加图片"仍允许发布
   - _Requirements: 1.1, 1.4, 2.4_
@@ -107,7 +107,7 @@
   - _Requirements: 3.1, 3.2, 3.4, 3.5_
 
 - [x] 13. 作品详情视图
-  - 大图 + 结构化信息（布料用量/纸样/可选成本）+ 点赞/收藏按钮与计数与已赞状态；未登录点赞/收藏弹登录
+  - 大图 + 结构化信息（纸样/可选最终成本；不含布料辅料明细）+ 点赞/收藏按钮与计数与已赞状态；未登录点赞/收藏弹登录
   - _Requirements: 2.1, 2.2, 2.3, 2.5, 3.3, 4.3, 4.4, 5.4_
   - _Properties: P1, P5_
 

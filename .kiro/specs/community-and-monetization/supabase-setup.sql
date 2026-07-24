@@ -245,7 +245,49 @@ create trigger post_favorites_count
   for each row execute function public.trg_post_favorites_count();
 
 -- =====================================================================
+-- 任务 2 补充：Storage（images bucket）访问策略
+-- 背景：把 bucket 设为 public 只开放了"匿名读取"，
+--       但通过用户 token 上传仍需 storage.objects 的 INSERT 策略，
+--       否则 saveToCloud 静默失败 → image_url 存空 → 社区不显示图片。
+-- 前提：已在 Supabase Storage 手动创建名为 images 的 public bucket。
+-- 上传路径规则：<user_id>/<uuid>.<ext>（见 index.html ImageStore.saveToCloud）
+-- =====================================================================
+
+-- 已登录用户可上传到 images bucket 下自己的目录
+drop policy if exists "images upload own" on storage.objects;
+create policy "images upload own" on storage.objects
+  for insert to authenticated
+  with check (
+    bucket_id = 'images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- 任何人可读取 images bucket（public bucket 通常已允许，显式声明更保险）
+drop policy if exists "images public read" on storage.objects;
+create policy "images public read" on storage.objects
+  for select to public
+  using ( bucket_id = 'images' );
+
+-- 已登录用户可删除/覆盖自己目录下的图片（可选，便于替换）
+drop policy if exists "images modify own" on storage.objects;
+create policy "images modify own" on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+drop policy if exists "images update own" on storage.objects;
+create policy "images update own" on storage.objects
+  for update to authenticated
+  using (
+    bucket_id = 'images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- =====================================================================
 -- 执行完成。可选自检：
 --   select * from public.showcase_posts limit 1;
 --   select public.get_image_usage();
+--   -- 存储策略：select * from pg_policies where tablename = 'objects';
 -- =====================================================================

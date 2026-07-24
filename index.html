@@ -3411,6 +3411,8 @@ const ImageStore = {
  });
  }
 };
+/* 暴露到 window，供 data-layer.js 等外部脚本访问（const 不会自动挂到 window） */
+window.ImageStore = ImageStore;
 
 /* ========== 图片加载辅助函数 ========== */
 function loadIdbImage(imgElement, imageRef) {
@@ -8148,9 +8150,7 @@ const CommunityController = {
  var isOwner = window.Auth && Auth.currentUser && Auth.currentUser.id === post.user_id;
 
  var info = '';
- (post.fabrics_snapshot || []).forEach(function(f) {
- info += '<div class="post-detail-info-row"><span>🧵 ' + self.escapeHtml(f.name || '布料') + '</span><span>' + (f.meters || 0) + ' 米</span></div>';
- });
+ // 社区仅展示最终成本，不显示布料/辅料明细
  if (post.pattern_snapshot && post.pattern_snapshot.name) {
  var pat = post.pattern_snapshot;
  info += '<div class="post-detail-info-row"><span>📐 纸样</span><span>' + self.escapeHtml(pat.name) + (pat.brand ? ' / ' + self.escapeHtml(pat.brand) : '') + '</span></div>';

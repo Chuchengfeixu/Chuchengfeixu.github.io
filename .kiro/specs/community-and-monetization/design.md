@@ -49,7 +49,7 @@
 
 ### 关键数据流
 
-**发布作品**：用户在制品详情点"发布" → 前端聚合该制品的公开字段（名称、图片 URL、布料用量、纸样信息、可选成本）→ 写入 `showcase_posts`（快照）→ Feed 可见。
+**发布作品**：用户在制品详情点"发布" → 前端聚合该制品的公开字段（名称、图片 URL、纸样信息、可选最终成本；不含布料/辅料明细）→ 写入 `showcase_posts`（快照）→ Feed 可见。
 
 **浏览 Feed**：任何人（含未登录）读 `showcase_posts`（RLS 允许读 `is_public = true`）→ 不查发布者私有表。
 
@@ -100,10 +100,8 @@ function buildSnapshot(product, options) {
     image_url: product.image || '',
     category: product.category || '',
     finish_date: product.completedDate || null,
-    // 布料快照（只取名称与用量，不含私有价格，除非 showCost）
-    fabrics_snapshot: (product.fabricUsages || []).map(function(u) {
-      return { name: u.fabricName, meters: u.metersUsed };
-    }),
+    // 社区仅展示最终成本，不公开布料/辅料明细，故快照不写入用量列表（存空数组）
+    fabrics_snapshot: [],
     // 纸样快照
     pattern_snapshot: product.patternId ? resolvePatternPublicInfo(product) : null,
     // 成本：默认不含，showCost 时才计算并写入
@@ -189,7 +187,7 @@ var Paywall = {
 
 - 侧边栏新增"社区"入口
 - **社区页（Feed）**：卡片流，复用现有 `.fabric-card` / `.product-card` 视觉风格；卡片显示图片、标题、点赞数、收藏按钮
-- **作品详情**：大图 + 结构化信息（布料用量、纸样、可选成本）+ 点赞/收藏
+- **作品详情**：大图 + 结构化信息（纸样、可选最终成本；不含布料/辅料明细）+ 点赞/收藏
 - **我的作品 / 我的收藏**：列表管理，发布者可编辑/取消公开/删除
 - **制品详情**：新增"发布为作品 / 更新作品"按钮
 - **账户信息区**：展示档位与本月图片配额
@@ -210,7 +208,7 @@ var Paywall = {
 | image_url | text | 图片快照 |
 | category | text | 分类快照 |
 | finish_date | date | 完成日期快照 |
-| fabrics_snapshot | jsonb | `[{name, meters}]` 布料用量快照 |
+| fabrics_snapshot | jsonb | 保留列，现固定存空数组 `[]`（社区不公开布料/辅料明细） |
 | pattern_snapshot | jsonb | `{name, brand, code}` 纸样快照，可空 |
 | cost_snapshot | jsonb | 成本快照，仅 show_cost 时有值 |
 | show_cost | boolean | 是否公开成本，默认 false |
