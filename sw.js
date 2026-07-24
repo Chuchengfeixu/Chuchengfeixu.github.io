@@ -1,8 +1,10 @@
-var CACHE_NAME = 'sewing-v2';
+var CACHE_NAME = 'sewing-v3';
 var URLS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
+  './css/styles.css',
+  './js/app.js',
   './js/supabase-config.js',
   './js/auth.js',
   './js/auth-ui.js',

@@ -1,13 +1,15 @@
 # 缝纫信息管理系统 - 项目状态
 
 ## 架构
-- 前端：纯 HTML/JS/CSS 单页应用（index.html 为主文件，约7800行）
+- 前端：纯 HTML/JS/CSS 单页应用（index.html 结构骨架 + css/styles.css 样式 + js/app.js 主逻辑，样式与主逻辑由 index.html 外链）
 - 后端：Supabase（数据库 + 认证）
 - 部署：GitHub Pages → https://chuchengfeixu.github.io
 - 仓库：https://github.com/Chuchengfeixu/Chuchengfeixu.github.io
 
 ## 文件结构
-- `index.html` - 主页面（包含所有 UI + 大部分 JS 逻辑）
+- `index.html` - 主页面结构（HTML + SVG sprite + 启动脚本；样式与主逻辑已外链）
+- `css/styles.css` - 全部样式（由原内联 `<style>` 抽出）
+- `js/app.js` - 主业务逻辑（由原内联 `<script>` 抽出：各 Controller / Store / UI / svgIcon 等）
 - `js/supabase-config.js` - Supabase 连接配置
 - `js/auth.js` - 认证模块（登录/注册/登出）
 - `js/auth-ui.js` - 登录注册界面交互
@@ -105,7 +107,7 @@
 ## Git 推送方式
 本地没有 Git GUI，用命令行：
 ```bash
-cd D:\缝纫系统
+cd d:\Sewing
 git add .
 git commit -m "提交信息"
 git push
@@ -145,6 +147,15 @@ git push
 - 如果文件冲突，提醒用户处理冲突后再推送
 
 ## 最近更新记录
+### [2026-07-24] - 拆分 index.html（CSS/JS 外链）+ 清理冗余文件
+**主要内容**:
+- 拆分主文件为三部分，降低单文件体积、便于按需读取：
+  - `css/styles.css`（原 `<style>` 约 2552 行抽出）、`js/app.js`（原主 `<script>` 约 5045 行抽出）；`index.html` 由 8432 行降至 841 行，改为 `<link>` + `<script src>` 引用
+  - 保持 UTF-8 BOM + CRLF 原样、脚本加载顺序不变；app.js 为经典脚本，全局词法作用域与原内联一致（各 Controller 仍以裸标识符供 onclick 解析）
+  - `sw.js` 缓存清单加入 `css/styles.css`、`js/app.js`，版本号 v2→v3（activate 时清理旧缓存）
+  - 已本地验证：三文件均返回 200、CSS 变量生效、`svgIcon`/`Store`/各 Controller 正常、无控制台报错
+- 清理冗余：`my-system-master.zip`（约 30.7KB）从版本库移除（`git rm --cached`，本地文件保留）；`.gitignore` 补充 `*.zip`、`.qoder/`、`不上传/`
+**Git状态**: ⏳ 待推送
 ### [2026-07-24] - 卡片操作图标统一（加号/编辑/删除，制品多分享）+ 布料辅料追加库存
 **主要内容**:
 - 统一各页卡片与列表的操作图标：布料/辅料/制品卡均为 `加号 / 编辑 / 删除`，制品卡多一个 `分享(发布)`；纸样卡维持 `编辑 / 删除`（无数量/米数概念）
@@ -156,7 +167,7 @@ git push
   - 辅料：新增 `NotionController.addQuantity`（prompt 输入追加数量，累加到 `quantity`）
   - 输入校验：非数字或 ≤0 提示错误；追加成功 Toast 显示新总量
 - 已本地验证：sprite 5 符号齐全、`svgIcon` 正常、新函数已挂载、无控制台报错
-**Git状态**: ⏳ 待推送
+**Git状态**: ✅ 已推送
 ### [2026-07-24] - 全局图标精简（能删就删 + 3个单色SVG）+ 图片上传失败改为明确报错
 **主要内容**:
 - 全局图标：绝大多数紧贴文字的装饰 emoji 直接删除（导航/页标题/数据按钮/看板标题/空状态/搜索结果/作品详情前缀等）；图标集精简至 3 个单色 SVG（编辑/删除/齿轮），发布/再做一件/完成改为文字按钮
@@ -166,7 +177,7 @@ git push
 **待办 / 注意**:
   - 工作区 `spec/supabase-setup.sql` 已由用户刻意删除（不再需要），本次提交连同此删除一起提交
   - 社区图片"发布时 image_url 为空"已好转（用户侧修复）；根因排查指向 Storage `storage.objects` INSERT 策略缺失
-**Git状态**: ⏳ 待推送
+**Git状态**: ✅ 已推送
 ### [2026-07-24] - bucket 就绪 + 社区图片修复 + 成本只显示总额
 **主要内容**:
 - 公开 `images` bucket 已在 Supabase Storage 创建（满足社区作品图片依赖）
@@ -187,65 +198,4 @@ git push
   - 用户在 Supabase 执行新增存储策略 SQL 后，重新发布作品验证社区图片显示
   - 管理员账号 / 第二账号方案（见"计划中"新增条目）
   - community spec 任务 17-18 手动验证（RLS/RPC 安全 + 端到端流程）
-**Git状态**: ⏳ 待推送
-
-### [2026-07-23] - community-and-monetization 主体完成 + 登录相关修复
-**主要内容**:
-- 完成 community-and-monetization spec 代码实现 16/18（详见"进行中的 Spec"）
-  - 后端 SQL（表 + RLS + RPC + 触发器）已在 Supabase 执行
-  - data-layer.js：CommunityStore / QuotaService / 快照与成本计算 / idb 图片转云端
-  - auth.js：requirePro 门禁 + 账户区档位与配额展示
-  - index.html：Paywall、9处图片配额守卫、发布入口、社区页(广场/我的作品/我的收藏)、作品详情、看板 Pro 分析卡片
-- 修复 bug：
-  - window.Auth 未暴露（const 不挂 window）导致 getUserId 恒 null → 发布误判"未登录"；已加 window.Auth = Auth
-  - 窗口切换/token 刷新重复弹"登录成功"；改为按用户 ID 去重 + 单独处理 TOKEN_REFRESHED
-  - 社区图标 🌐→👭；制品发布图标 🌐→📤
-**待办**:
-  - community spec 任务 17-18 手动验证（安全 + 端到端）
-  - 全局图标统一（方案 A + 中性深灰，见"计划中"）
 **Git状态**: ✅ 已推送
-
-### [2026-07-16] - 修复导入数据不入库的 bug
-**主要内容**:
-- 重写 data-layer.js 的 importAll：async + 逐表批量 upsert + await 真正写完
-- 解决重复 id 导入冲突（insert → upsert）、导入结果如实反馈
-- products 关联表 product_fabrics 先删后插避免重复；兜底写本地
-**Git状态**: ✅ 已推送
-
-### [2026-07-09] - 离线数据同步（方案二）
-**主要内容**:
-- 在 data-layer.js 中为所有云端写操作（add/update/remove，含 product_fabrics）加入失败处理
-- 新增 runSync/persistLocal/notifySyncError：失败时兜底写本地 + Toast 提示，避免数据静默丢失
-- 同时捕获 supabase 返回 error 和断网 reject 两种失败
-- 采用防丢失+提示方案，不含自动重放队列
-
-**Git状态**: ✅ 已推送
-**待办**: 排查"导入数据后刷新丢失"的 bug
-
-### [2026-07-07] - 文档维护流程建立
-**提交ID**: 14fd63e
-**主要内容**:
-- 建立文档维护流程，明确每次变更后必须更新此文档
-- 添加Kiro自动推送要求，每次代码更新后自动推送到GitHub
-- 优化"已知问题/TODO"章节，使用状态图标区分任务
-- 记录Git环境配置完成状态和Kiro可用性验证
-
-**Git状态**: ✅ 提交成功推送到GitHub远程仓库
-**环境配置**: Git已正确安装到E:\Git并配置到系统PATH
-**Kiro推送验证**: ✅ 已验证Kiro可以自动完成commit和push操作
-**自动推送要求**: 已添加到文档维护规则中
-
-### [2026-07-06] - 重构完成
-**提交ID**: 5375639
-**主要内容**:
-- 重构index.html主页面结构，提升代码组织和可维护性
-- 优化auth.js认证模块，改进错误处理和用户体验
-- 增强data-layer.js数据层，完善内存与云端同步机制
-- 更新manifest.json PWA配置，添加新图标支持
-- 新增PROJECT-STATUS.md项目状态文档，记录架构细节
-- 添加icon-192.png和icon-512.png PWA应用图标
-- 改进响应式设计，优化移动端体验
-
-**Git状态**: ✅ 本地提交已推送至GitHub
-**环境配置**: Git已正确安装到E:\Git并配置到系统PATH
-**Kiro可用**: ✅ 完全支持Git操作
