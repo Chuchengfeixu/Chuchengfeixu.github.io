@@ -384,6 +384,11 @@
  box-shadow: none !important;
  opacity: 0.8;
  }
+
+ /* 图标按钮：取模块主题色而非填充按钮的白字（双类高优先级，不受色类定义顺序影响） */
+ .btn-icon.btn-pink { color: var(--pink); }
+ .btn-icon.btn-purple { color: var(--purple); }
+ .btn-icon.btn-green { color: var(--green-dark); }
  
  .fabric-list {
  display: grid;
