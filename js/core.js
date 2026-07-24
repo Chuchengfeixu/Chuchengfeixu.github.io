@@ -21,6 +21,16 @@ return v.toString(16);
 });
 }
 
+/* ========== Logger 轻量日志（生产默认静默；console.error 始终保留）
+   开启调试：控制台执行 localStorage.setItem('sewing_debug','1') 后刷新 ========== */
+var Logger = {
+ enabled: false,
+ log: function() { if (this.enabled && window.console) console.log.apply(console, arguments); },
+ warn: function() { if (this.enabled && window.console) console.warn.apply(console, arguments); },
+ info: function() { if (this.enabled && window.console) console.info.apply(console, arguments); }
+};
+try { if (window.localStorage && localStorage.getItem('sewing_debug') === '1') Logger.enabled = true; } catch (e) {}
+
 /* ========== ImageStore 模块（IndexedDB 图片存储 + Supabase Storage） ========== */
 const ImageStore = {
  DB_NAME: 'sewing_images_db',
@@ -627,6 +637,77 @@ const Toast = {
  toast.parentNode.removeChild(toast);
  }
  }, 3000);
+ }
+};
+
+/* ========== InputDialog 统一输入弹窗（替代原生 prompt，Promise 风格）
+   InputDialog.open({ title, message, defaultValue, type:'text'|'number', placeholder, confirmText, cancelText })
+   → 确定 resolve 输入值（未 trim，与 prompt 一致）；取消/点遮罩/Esc resolve null ========== */
+const InputDialog = {
+ open(opts) {
+ opts = opts || {};
+ return new Promise(function(resolve) {
+ var old = document.getElementById('inputDialogOverlay');
+ if (old && old.parentNode) old.parentNode.removeChild(old);
+
+ var overlay = document.createElement('div');
+ overlay.id = 'inputDialogOverlay';
+ overlay.style.cssText = 'position:fixed;inset:0;background:rgba(30,30,30,0.35);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:9998;display:flex;justify-content:center;align-items:center;padding:20px;';
+
+ var box = document.createElement('div');
+ box.className = 'confirm-dialog';
+ box.style.cssText = 'text-align:left;';
+
+ var title = document.createElement('div');
+ title.className = 'confirm-dialog-title';
+ title.style.color = 'var(--purple-dark)';
+ title.textContent = opts.title || '请输入';
+ box.appendChild(title);
+
+ if (opts.message) {
+ var msg = document.createElement('div');
+ msg.className = 'confirm-dialog-message';
+ msg.style.textAlign = 'left';
+ msg.textContent = opts.message;
+ box.appendChild(msg);
+ }
+
+ var input = document.createElement('input');
+ input.type = opts.type === 'number' ? 'number' : 'text';
+ input.value = (opts.defaultValue != null) ? opts.defaultValue : '';
+ if (opts.placeholder) input.placeholder = opts.placeholder;
+ if (opts.type === 'number') { input.step = 'any'; input.min = '0'; }
+ input.style.cssText = 'width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:20px;';
+ box.appendChild(input);
+
+ var actions = document.createElement('div');
+ actions.className = 'confirm-dialog-actions';
+ var cancelBtn = document.createElement('button');
+ cancelBtn.className = 'btn btn-gray';
+ cancelBtn.textContent = opts.cancelText || '取消';
+ var okBtn = document.createElement('button');
+ okBtn.className = 'btn btn-purple';
+ okBtn.textContent = opts.confirmText || '确定';
+ actions.appendChild(cancelBtn);
+ actions.appendChild(okBtn);
+ box.appendChild(actions);
+
+ overlay.appendChild(box);
+ document.body.appendChild(overlay);
+
+ var done = false;
+ function cleanup() { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); document.removeEventListener('keydown', onKey); }
+ function onConfirm() { if (done) return; done = true; var v = input.value; cleanup(); resolve(v); }
+ function onCancel() { if (done) return; done = true; cleanup(); resolve(null); }
+ function onKey(e) { if (e.key === 'Enter') { e.preventDefault(); onConfirm(); } else if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }
+
+ okBtn.addEventListener('click', onConfirm);
+ cancelBtn.addEventListener('click', onCancel);
+ overlay.addEventListener('click', function(e) { if (e.target === overlay) onCancel(); });
+ document.addEventListener('keydown', onKey);
+
+ setTimeout(function() { input.focus(); input.select(); }, 30);
+ });
  }
 };
 

@@ -289,12 +289,12 @@ async function loadFromCloud() {
             if (res.error) console.error('[迁移scraps]', res.error.message);
           });
         });
-        console.log('[DataLayer] 已迁移 ' + localScraps.length + ' 条报废记录到云端');
+        Logger.log('[DataLayer] 已迁移 ' + localScraps.length + ' 条报废记录到云端');
       }
     }
 
     _cloudLoaded = true;
-    console.log('[DataLayer] 云端数据已加载');
+    Logger.log('[DataLayer] 云端数据已加载');
     return true;
   } catch (e) {
     console.error('[DataLayer] 加载失败:', e);

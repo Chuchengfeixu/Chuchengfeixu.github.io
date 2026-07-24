@@ -162,7 +162,7 @@ var upBtn = document.createElement('button');
  },
 
  editOption(fieldName, oldValue) {
- var newValue = prompt('修改选项名称：', oldValue);
+ InputDialog.open({ title: '修改选项名称', defaultValue: oldValue, placeholder: '请输入选项名称' }).then(function(newValue) {
  if (newValue === null) { return; }
  newValue = newValue.trim();
  if (!newValue) {
@@ -177,14 +177,16 @@ var upBtn = document.createElement('button');
  }
  OptionController.updateOption(fieldName, oldValue, newValue);
  Toast.show('选项已更新', 'success');
- this.renderList();
+ OptionManagerController.renderList();
+ });
  },
 
  deleteOption(fieldName, value) {
- if (!confirm('确定要删除选项"' + value + '"吗？')) { return; }
+ DeleteConfirm.show('确定要删除选项"' + value + '"吗？', function() {
  OptionController.removeOption(fieldName, value);
  Toast.show('选项已删除', 'success');
- this.renderList();
+ OptionManagerController.renderList();
+ });
  }
 };
 

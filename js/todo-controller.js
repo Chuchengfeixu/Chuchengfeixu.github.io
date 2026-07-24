@@ -89,13 +89,13 @@ const TodoController = {
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新的类别名称：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增类别', placeholder: '请输入新的类别名称' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption('productCategory', newVal.trim());
  TodoController.populateCategoryOptions(newVal.trim());
- } else {
- select.value = selectedValue || '';
  }
+ });
  }
  };
  },
@@ -117,13 +117,13 @@ const TodoController = {
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新的使用者名称：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增使用者', placeholder: '请输入新的使用者名称' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption('productUser', newVal.trim());
  TodoController.populateUserOptions(newVal.trim());
- } else {
- select.value = selectedValue || '';
  }
+ });
  }
  };
  },
@@ -145,13 +145,13 @@ const TodoController = {
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新的纸样来源：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增纸样来源', placeholder: '请输入新的纸样来源' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption('patternSource', newVal.trim());
  TodoController.populatePatternSourceOptions(newVal.trim());
- } else {
- select.value = selectedValue || '';
  }
+ });
  }
  };
  },

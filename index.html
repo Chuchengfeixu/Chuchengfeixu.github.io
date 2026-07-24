@@ -775,7 +775,7 @@
 <script src="js/main.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
- navigator.serviceWorker.register('sw.js').catch(function(e) { console.log('SW registration failed:', e); });
+ navigator.serviceWorker.register('sw.js').catch(function(e) { Logger.log('SW registration failed:', e); });
 }
 </script>
 <script src="js/supabase-config.js"></script>
@@ -784,17 +784,17 @@ if ('serviceWorker' in navigator) {
 <script src="js/data-layer.js"></script>
 <script>
 // 调试：确认脚本都加载成功
-console.log('[启动] supabase:', typeof supabase !== 'undefined' ? '已加载' : '未加载');
-console.log('[启动] Auth:', typeof Auth !== 'undefined' ? '已加载' : '未加载');
-console.log('[启动] AuthUI:', typeof AuthUI !== 'undefined' ? '已加载' : '未加载');
-console.log('[启动] DataLayer:', typeof DataLayer !== 'undefined' ? '已加载' : '未加载');
-console.log('[启动] Store.KEYS:', Store && Store.KEYS ? '正常' : '异常');
+Logger.log('[启动] supabase:', typeof supabase !== 'undefined' ? '已加载' : '未加载');
+Logger.log('[启动] Auth:', typeof Auth !== 'undefined' ? '已加载' : '未加载');
+Logger.log('[启动] AuthUI:', typeof AuthUI !== 'undefined' ? '已加载' : '未加载');
+Logger.log('[启动] DataLayer:', typeof DataLayer !== 'undefined' ? '已加载' : '未加载');
+Logger.log('[启动] Store.KEYS:', Store && Store.KEYS ? '正常' : '异常');
 
 // 初始化认证，登录后加载云端数据
 Auth.init().then(function() {
-  console.log('[启动] Auth.init 完成，开始绑定UI事件');
+  Logger.log('[启动] Auth.init 完成，开始绑定UI事件');
   AuthUI.init();
-  console.log('[启动] AuthUI.init 完成');
+  Logger.log('[启动] AuthUI.init 完成');
 }).catch(function(e) {
   console.error('[启动] Auth init error:', e);
   AuthUI.init();
@@ -802,7 +802,7 @@ Auth.init().then(function() {
 
 // 数据加载完成后刷新所有页面
 window.addEventListener('dataReady', function() {
-  console.log('[数据就绪] 刷新所有页面');
+  Logger.log('[数据就绪] 刷新所有页面');
   try {
     FabricController.renderList();
     ProductController.renderList();
@@ -838,7 +838,7 @@ async function migrateImagesToCloud() {
           var cloudUrl = await ImageStore.saveToCloud(base64);
           if (cloudUrl) {
             Store.update(tables[t].key, item.id, { image: cloudUrl });
-            console.log('[图片迁移] ' + tables[t].table + '/' + item.id + ' 已上传到云端');
+            Logger.log('[图片迁移] ' + tables[t].table + '/' + item.id + ' 已上传到云端');
           }
         } catch(e) { console.error('[图片迁移] 失败:', e); }
       }

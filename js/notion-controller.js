@@ -70,11 +70,13 @@ const NotionController = {
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新选项：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增选项', placeholder: '请输入新选项' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption(optionField, newVal.trim());
  NotionController.populateOptions(selectId, optionField, newVal.trim());
- } else { select.value = selectedValue || ''; }
+ }
+ });
  }
  };
  },
@@ -198,7 +200,7 @@ const NotionController = {
  addQuantity(id) {
  var n = Store.getById(Store.KEYS.NOTIONS, id);
  if (!n) return;
- var input = prompt('追加数量（累加到「' + n.name + '」的库存，当前 ' + (n.quantity || 0) + (n.unit ? ' ' + n.unit : '') + '）', '');
+ InputDialog.open({ title: '追加数量', message: '累加到「' + n.name + '」的库存，当前 ' + (n.quantity || 0) + (n.unit ? ' ' + n.unit : ''), type: 'number', placeholder: '请输入追加的数量' }).then(function(input) {
  if (input === null) return;
  var add = Number(input);
  if (!isFinite(add) || add <= 0) { Toast.show('请输入大于 0 的数字', 'error'); return; }
@@ -206,6 +208,7 @@ const NotionController = {
  Store.update(Store.KEYS.NOTIONS, id, { quantity: newQty });
  Toast.show('已追加 ' + add + (n.unit ? ' ' + n.unit : '') + '，库存 ' + newQty, 'success');
  NotionController.renderList();
+ });
  },
 
  renderList() {

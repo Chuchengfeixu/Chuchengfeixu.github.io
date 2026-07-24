@@ -158,13 +158,13 @@ const FabricController = {
 
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新的店铺名称：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增店铺', placeholder: '请输入新的店铺名称' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption('fabricShop', newVal.trim());
  FabricController.populateShopOptions(newVal.trim());
- } else {
- select.value = selectedValue || '';
  }
+ });
  }
  };
  },
@@ -187,13 +187,13 @@ const FabricController = {
 
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新的幅宽值（如 120cm）：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增幅宽', placeholder: '请输入新的幅宽值（如 120cm）' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption('fabricWidth', newVal.trim());
  FabricController.populateWidthOptions(newVal.trim());
- } else {
- select.value = selectedValue || '';
  }
+ });
  }
  };
  },
@@ -557,7 +557,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  addMeters(id) {
  var fabric = Store.getById(Store.KEYS.FABRICS, id);
  if (!fabric) return;
- var input = prompt('追加米数（累加到「' + fabric.name + '」的总米数，当前 ' + (fabric.meters || 0) + ' 米）', '');
+ InputDialog.open({ title: '追加米数', message: '累加到「' + fabric.name + '」的总米数，当前 ' + (fabric.meters || 0) + ' 米', type: 'number', placeholder: '请输入追加的米数' }).then(function(input) {
  if (input === null) return;
  var add = Number(input);
  if (!isFinite(add) || add <= 0) { Toast.show('请输入大于 0 的数字', 'error'); return; }
@@ -565,6 +565,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  Store.update(Store.KEYS.FABRICS, id, { meters: newMeters });
  Toast.show('已追加 ' + add + ' 米，总米数 ' + newMeters, 'success');
  FabricController.renderList();
+ });
  },
 
  scrapFabric() {

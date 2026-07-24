@@ -70,11 +70,13 @@ const PatternController = {
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
- var newVal = prompt('请输入新选项：');
+ select.value = selectedValue || '';
+ InputDialog.open({ title: '新增选项', placeholder: '请输入新选项' }).then(function(newVal) {
  if (newVal && newVal.trim()) {
  OptionController.addOption(optionField, newVal.trim());
  PatternController.populateOptions(selectId, optionField, newVal.trim());
- } else { select.value = selectedValue || ''; }
+ }
+ });
  }
  };
  },

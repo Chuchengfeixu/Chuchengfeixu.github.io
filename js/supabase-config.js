@@ -12,5 +12,5 @@ if (window.supabase && window.supabase.createClient) {
 } else {
   console.error('[supabase-config] window.supabase 对象异常:', window.supabase);
 }
-console.log('[supabase-config] supabaseClient:', supabaseClient ? '初始化成功' : '初始化失败');
-console.log('[supabase-config] auth:', supabaseClient && supabaseClient.auth ? '存在' : '不存在');
+Logger.log('[supabase-config] supabaseClient:', supabaseClient ? '初始化成功' : '初始化失败');
+Logger.log('[supabase-config] auth:', supabaseClient && supabaseClient.auth ? '存在' : '不存在');
