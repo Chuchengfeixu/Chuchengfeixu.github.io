@@ -13,9 +13,9 @@ var SUPABASE_ENVS = {
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2ZWxmcnVleGV5cXRkeGFyd2NkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwNzA3ODIsImV4cCI6MjA5NjY0Njc4Mn0.H5TIRfDCgdRmVM9L2yKH5uVWDx6Gt94PBbXPjQS6bHo'
   },
   staging: {
-    // TODO: 新建 staging Supabase 项目后，把它的 Project URL 和 anon public key 填到这里
-    url: '',
-    anonKey: ''
+    // staging 库（本地开发 / 测试用）。URL 用项目根地址，不带 /rest/v1/
+    url: 'https://qlwgpngzdwdvksbxbzdy.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsd2dwbmd6ZHdkdmtzYnhiemR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4NzcyNTQsImV4cCI6MjEwMDQ1MzI1NH0.HxYuNB7o5a8GYgNczoRb6HMPH5vr7iliv9xi8Dexsks'
   }
 };
 
