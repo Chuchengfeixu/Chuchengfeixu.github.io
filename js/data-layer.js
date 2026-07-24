@@ -531,19 +531,23 @@ function resolvePatternPublicInfo(product) {
 
 // 将制品图片解析为"公开可访问的云端 URL"
 // 社区作品会被其他用户浏览，本地 IndexedDB(idb:) 图片对他人不可见，必须上传到 Supabase Storage
+// 失败时 throw，让上层（publishPost/updatePost）catch 后返回明确错误提示，
+// 避免图片上传失败被静默吞掉、image_url 存空还不报错。
 async function resolvePublicImageUrl(image) {
   if (!image) return '';
   if (/^https?:\/\//i.test(image)) return image;           // 已是云端 URL
-  if (image.indexOf('idb:') === 0 && window.ImageStore) {
-    var key = image.slice(4);
-    var base64 = await ImageStore.get(key);
-    if (!base64) return '';
+  var isIdb = image.indexOf('idb:') === 0;
+  var isData = image.indexOf('data:') === 0;
+  if (isIdb || isData) {
+    if (!window.ImageStore) throw new Error('图片模块未就绪，请刷新页面后重试');
+    var base64 = image;
+    if (isIdb) {
+      base64 = await ImageStore.get(image.slice(4));
+      if (!base64) throw new Error('本地未找到该图片（可能换了设备或清过缓存），请重新上传后再发布');
+    }
     var url = await ImageStore.saveToCloud(base64);         // 上传到 Storage 取公开 URL
-    return url || '';
-  }
-  if (image.indexOf('data:') === 0 && window.ImageStore) {  // 直接是 base64
-    var u = await ImageStore.saveToCloud(image);
-    return u || '';
+    if (!url) throw new Error('图片上传失败，请检查网络或存储权限后重试');
+    return url;
   }
   return '';
 }
@@ -578,7 +582,11 @@ window.CommunityStore = {
     var product = window.Store ? Store.getById('sewing_products', productId) : null;
     if (!product) return { ok: false, error: '制品不存在' };
     var snap = buildSnapshot(product, options);
-    snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
+    try {
+      snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
+    } catch (e) {
+      return { ok: false, error: e.message || '图片处理失败' };
+    }
     snap.user_id = userId;
     snap.is_public = true;
     var res = await getDB().from('showcase_posts').insert(snap).select().maybeSingle();
@@ -596,7 +604,11 @@ window.CommunityStore = {
     var product = window.Store ? Store.getById('sewing_products', cur.data.product_id) : null;
     if (!product) return { ok: false, error: '原制品已删除，无法更新作品' };
     var snap = buildSnapshot(product, options);
-    snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
+    try {
+      snap.image_url = await resolvePublicImageUrl(product.image);   // 转云端公开 URL
+    } catch (e) {
+      return { ok: false, error: e.message || '图片处理失败' };
+    }
     snap.updated_at = new Date().toISOString();
     var res = await getDB().from('showcase_posts').update(snap).eq('id', postId).select().maybeSingle();
     if (res.error) { onSyncFail('update', 'showcase_posts', res.error.message); return { ok: false, error: res.error.message }; }

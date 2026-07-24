@@ -365,6 +365,19 @@
  transition: transform 0.15s, opacity 0.15s;
  }
  
+ .icon {
+ width: 1em;
+ height: 1em;
+ display: inline-block;
+ vertical-align: -0.14em;
+ fill: none;
+ stroke: currentColor;
+ stroke-width: 2;
+ stroke-linecap: round;
+ stroke-linejoin: round;
+ pointer-events: none;
+ }
+
  .btn-icon:hover {
  transform: scale(1.15);
  background: none !important;
@@ -2549,6 +2562,17 @@ line-height: 1;
  </style>
 </head>
 <body>
+ <!-- 单色图标 sprite（stroke=currentColor，随文字/按钮颜色自动上色） -->
+ <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+ <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+ 
+ <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+ </svg>
+ <script>
+ /* 图标 helper：供 JS 模板字符串拼接使用，cls 可选附加类 */
+ window.svgIcon = function(name, cls){ return '<svg class="icon' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + name + '"></use></svg>'; };
+ </script>
  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -2612,21 +2636,21 @@ line-height: 1;
  <aside class="sidebar" id="sidebar">
  <div class="sidebar-title"><a href="#home" style="text-decoration:none;color:inherit;">🧵 缝纫管理系统</a></div>
  <ul class="sidebar-nav">
- <li><a href="#fabric" data-page="fabric">🧵 布料管理</a></li>
- <li><a href="#product" data-page="product">✂️ 制品管理</a></li>
- <li><a href="#pattern" data-page="pattern">📐 纸样管理</a></li>
- <li><a href="#notion" data-page="notion">🧷 辅料管理</a></li>
- <li><a href="#todo" data-page="todo">📋 待做列表</a></li>
- <li><a href="#dashboard" data-page="dashboard">📊 看板</a></li>
- <li><a href="#print" data-page="print">🖨️ 打印</a></li>
- <li><a href="#community" data-page="community">👭 社区</a></li>
+ <li><a href="#fabric" data-page="fabric">布料管理</a></li>
+ <li><a href="#product" data-page="product">制品管理</a></li>
+ <li><a href="#pattern" data-page="pattern">纸样管理</a></li>
+ <li><a href="#notion" data-page="notion">辅料管理</a></li>
+ <li><a href="#todo" data-page="todo">待做列表</a></li>
+ <li><a href="#dashboard" data-page="dashboard">看板</a></li>
+ <li><a href="#print" data-page="print">打印</a></li>
+ <li><a href="#community" data-page="community">社区</a></li>
  </ul>
  <div class="sidebar-actions">
  <div id="sidebarUserInfo" class="sidebar-user-info"></div>
- <button class="btn-data" id="btnExportData">💾 导出数据</button>
- <button class="btn-data" id="btnImportData">📂 导入数据</button>
+ <button class="btn-data" id="btnExportData">导出数据</button>
+ <button class="btn-data" id="btnImportData">导入数据</button>
  <input type="file" id="importFileInput" style="display:none" accept=".json,application/json">
- <button class="btn-data" id="btnLogout" style="color:var(--coral);">🚪 退出登录</button>
+ <button class="btn-data" id="btnLogout" style="color:var(--coral);">退出登录</button>
  </div>
  </aside>
 
@@ -2667,7 +2691,7 @@ line-height: 1;
  <!-- 主页 -->
  <section id="page-home" class="page">
  <div class="page-wrapper">
- <h2 class="page-title">🏠 主页</h2>
+ <h2 class="page-title">主页</h2>
  <div class="page-content" id="homeContent">
  <div class="home-search-bar">
  <input type="text" class="home-search-input" id="homeSearchInput" placeholder="搜索布料、制品、待做...">
@@ -2689,7 +2713,7 @@ line-height: 1;
  <!-- 页面容器 -->
  <section id="page-fabric" class="page">
  <div class="page-wrapper">
- <h2 class="page-title">🧵 布料管理</h2>
+ <h2 class="page-title">布料管理</h2>
  <div class="page-content" id="fabricContent">
  <div class="fabric-toolbar">
  <div style="display:flex;gap:8px;align-items:center;">
@@ -2714,7 +2738,7 @@ line-height: 1;
  <!-- 报废记录折叠区 -->
  <div style="margin-top:20px;">
  <div class="print-section-toggle" id="scrapToggle" style="font-size:13px;color:var(--text-light);cursor:pointer;user-select:none;">
- 🗑️ 报废记录 <span class="toggle-arrow" style="display:inline-block;transition:transform 0.2s;margin-left:4px;">▶</span>
+ 报废记录 <span class="toggle-arrow" style="display:inline-block;transition:transform 0.2s;margin-left:4px;">▶</span>
  </div>
  <div id="scrapList" style="display:none;margin-top:8px;"></div>
  </div>
@@ -2739,7 +2763,7 @@ line-height: 1;
  <select id="fabricShop">
  <option value="">请选择店铺</option>
  </select>
- <button type="button" class="btn-manage-options" data-field="fabricShop" title="管理选项">⚙️</button>
+ <button type="button" class="btn-manage-options" data-field="fabricShop" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
  </div>
  </div>
 
@@ -2760,7 +2784,7 @@ line-height: 1;
  <select id="fabricWidth">
  <option value="">请选择幅宽</option>
  </select>
- <button type="button" class="btn-manage-options" data-field="fabricWidth" title="管理选项">⚙️</button>
+ <button type="button" class="btn-manage-options" data-field="fabricWidth" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
  </div>
  </div>
  </div>
@@ -2793,7 +2817,7 @@ line-height: 1;
  <div class="form-group">
  <label>图片</label>
  <div class="image-upload-area" id="fabricImageArea">
- <span class="upload-hint">📷 点击上传或 Ctrl+V 粘贴</span>
+ <span class="upload-hint">点击上传或 Ctrl+V 粘贴</span>
  <input type="file" id="fabricImageInput" accept="image/*">
  </div>
  <div class="image-preview" id="fabricImagePreview">
@@ -2829,7 +2853,7 @@ line-height: 1;
  </section>
 <section id="page-product" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">✂️ 制品管理</h2>
+<h2 class="page-title">制品管理</h2>
 <div class="page-content" id="productContent">
 <div class="product-toolbar">
 <div style="display:flex;gap:8px;align-items:center;">
@@ -2870,7 +2894,7 @@ line-height: 1;
 <select id="productCategory">
 <option value="">请选择类别</option>
 </select>
-<button type="button" class="btn-manage-options" data-field="productCategory" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="productCategory" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
@@ -2886,7 +2910,7 @@ line-height: 1;
 <select id="productUser">
 <option value="">请选择使用者</option>
 </select>
-<button type="button" class="btn-manage-options" data-field="productUser" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="productUser" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 
@@ -2915,7 +2939,7 @@ line-height: 1;
 <select id="productPatternSource">
 <option value="">请选择来源</option>
 </select>
-<button type="button" class="btn-manage-options" data-field="patternBrand" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="patternBrand" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
@@ -2936,7 +2960,7 @@ line-height: 1;
 <div class="form-group">
 <label>照片</label>
 <div class="image-upload-area" id="productImageArea">
-<span class="upload-hint">📷 点击上传或 Ctrl+V 粘贴</span>
+<span class="upload-hint">点击上传或 Ctrl+V 粘贴</span>
 <input type="file" id="productImageInput" accept="image/*">
 </div>
 <div class="image-preview" id="productImagePreview">
@@ -2968,7 +2992,7 @@ line-height: 1;
 <!-- 纸样管理页面 -->
 <section id="page-pattern" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">📐 纸样管理</h2>
+<h2 class="page-title">纸样管理</h2>
 <div class="page-content" id="patternContent">
 <div class="fabric-toolbar">
 <div style="display:flex;gap:8px;align-items:center;">
@@ -3005,7 +3029,7 @@ line-height: 1;
 <label>来源/品牌</label>
 <div class="select-with-add">
 <select id="patternFormBrand"><option value="">请选择来源</option></select>
-<button type="button" class="btn-manage-options" data-field="patternBrand" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="patternBrand" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
@@ -3017,13 +3041,13 @@ line-height: 1;
 <label>类别</label>
 <div class="select-with-add">
 <select id="patternFormCategory"><option value="">请选择类别</option></select>
-<button type="button" class="btn-manage-options" data-field="patternCategory" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="patternCategory" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
 <label>图片</label>
 <div class="image-upload-area" id="patternFormImageArea">
-<span class="upload-hint">📷 点击上传或 Ctrl+V 粘贴</span>
+<span class="upload-hint">点击上传或 Ctrl+V 粘贴</span>
 <input type="file" id="patternFormImageInput" accept="image/*">
 </div>
 <div class="image-preview" id="patternFormImagePreview">
@@ -3051,7 +3075,7 @@ line-height: 1;
 <!-- 辅料管理页面 -->
 <section id="page-notion" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">🧷 辅料管理</h2>
+<h2 class="page-title">辅料管理</h2>
 <div class="page-content" id="notionContent">
 <div class="fabric-toolbar">
 <div style="display:flex;gap:8px;align-items:center;">
@@ -3088,14 +3112,14 @@ line-height: 1;
 <label>类别</label>
 <div class="select-with-add">
 <select id="notionFormCategory"><option value="">请选择类别</option></select>
-<button type="button" class="btn-manage-options" data-field="notionCategory" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="notionCategory" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
 <label>店铺</label>
 <div class="select-with-add">
 <select id="notionFormShop"><option value="">请选择店铺</option></select>
-<button type="button" class="btn-manage-options" data-field="notionShop" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="notionShop" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 </div>
@@ -3109,7 +3133,7 @@ line-height: 1;
 <label>单位</label>
 <div class="select-with-add">
 <select id="notionFormUnit"><option value="">请选择单位</option></select>
-<button type="button" class="btn-manage-options" data-field="notionUnit" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="notionUnit" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 </div>
@@ -3128,7 +3152,7 @@ line-height: 1;
 <div class="form-group">
 <label>图片</label>
 <div class="image-upload-area" id="notionFormImageArea">
-<span class="upload-hint">📷 点击上传或 Ctrl+V 粘贴</span>
+<span class="upload-hint">点击上传或 Ctrl+V 粘贴</span>
 <input type="file" id="notionFormImageInput" accept="image/*">
 </div>
 <div class="image-preview" id="notionFormImagePreview">
@@ -3147,7 +3171,7 @@ line-height: 1;
 
 <section id="page-todo" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">📋 待做列表</h2>
+<h2 class="page-title">待做列表</h2>
 <div class="page-content" id="todoContent">
 <div class="fabric-toolbar" style="margin-bottom:16px;">
 <div class="view-toggle card-expand-btns" id="todoExpandBtns">
@@ -3175,7 +3199,7 @@ line-height: 1;
 <label>类别</label>
 <div class="select-with-add">
 <select id="todoFormCategory"><option value="">请选择类别</option></select>
-<button type="button" class="btn-manage-options" data-field="productCategory" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="productCategory" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
@@ -3187,7 +3211,7 @@ line-height: 1;
 <label>使用者</label>
 <div class="select-with-add">
 <select id="todoFormUser"><option value="">请选择使用者</option></select>
-<button type="button" class="btn-manage-options" data-field="productUser" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="productUser" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-row">
@@ -3195,7 +3219,7 @@ line-height: 1;
 <label>纸样来源</label>
 <div class="select-with-add">
 <select id="todoFormPatternSource"><option value="">请选择纸样来源</option></select>
-<button type="button" class="btn-manage-options" data-field="patternSource" title="管理选项">⚙️</button>
+<button type="button" class="btn-manage-options" data-field="patternSource" title="管理选项"><svg class="icon"><use href="#i-gear"></use></svg></button>
 </div>
 </div>
 <div class="form-group">
@@ -3210,7 +3234,7 @@ line-height: 1;
 <div class="form-group">
 <label>图片</label>
 <div class="image-upload-area" id="todoFormImageArea">
-<span class="upload-hint">📷 点击或拖拽上传图片</span>
+<span class="upload-hint">点击或拖拽上传图片</span>
 <input type="file" id="todoFormImageInput" accept="image/*">
 </div>
 <div class="image-preview" id="todoFormImagePreview">
@@ -3234,34 +3258,34 @@ line-height: 1;
 </section>
 <section id="page-dashboard" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">📊 看板</h2>
+<h2 class="page-title">看板</h2>
 <div class="page-content" id="dashboardContent"></div>
 </div>
 </section>
 <section id="page-print" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">🖨️ 打印</h2>
+<h2 class="page-title">打印</h2>
 <div class="page-content" id="printContent">
 <div class="print-controls" id="printControls">
 <label class="print-select-all-label">
 <input type="checkbox" id="printSelectAll" checked>
 全选 / 取消全选
 </label>
-<button class="btn btn-orange" id="btnPrint">🖨️ 打印纸条</button>
+<button class="btn btn-orange" id="btnPrint">打印纸条</button>
 </div>
 <div id="printFabricChecklist" style="margin-bottom:20px;"></div>
-<div class="print-preview-title" id="printPreviewTitle">📋 打印预览</div>
+<div class="print-preview-title" id="printPreviewTitle">打印预览</div>
 <div class="print-slip-grid" id="printSlipGrid"></div>
 </div>
 </div>
 </section>
 <section id="page-community" class="page">
 <div class="page-wrapper">
-<h2 class="page-title">👭 社区</h2>
+<h2 class="page-title">社区</h2>
 <div class="community-tabs" id="communityTabs">
-<button class="community-tab active" data-tab="feed">🖼️ 广场</button>
-<button class="community-tab" data-tab="mine">📢 我的作品</button>
-<button class="community-tab" data-tab="fav">⭐ 我的收藏</button>
+<button class="community-tab active" data-tab="feed">广场</button>
+<button class="community-tab" data-tab="mine">我的作品</button>
+<button class="community-tab" data-tab="fav">我的收藏</button>
 </div>
 <div id="communityContent" class="community-content"></div>
 </div>
@@ -4256,7 +4280,7 @@ const FabricController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
 
  select.onchange = function() {
@@ -4285,7 +4309,7 @@ const FabricController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
 
  select.onchange = function() {
@@ -4488,7 +4512,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  document.getElementById('fabricImageThumb').src = '';
  document.getElementById('fabricImagePreview').style.display = 'none';
  document.getElementById('fabricImageInput').value = '';
- document.getElementById('fabricImageArea').querySelector('.upload-hint').textContent = '📷 点击上传或 Ctrl+V 粘贴';
+ document.getElementById('fabricImageArea').querySelector('.upload-hint').textContent = '点击上传或 Ctrl+V 粘贴';
  document.getElementById('fabricOcrStatus').className = 'ocr-status';
  },
 
@@ -4719,7 +4743,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  
  if (fabrics.length === 0) {
  container.className = 'fabric-list';
- container.innerHTML = '<div class="fabric-empty">🧵 还没有布料记录，点击上方按钮添加吧！</div>';
+ container.innerHTML = '<div class="fabric-empty">还没有布料记录，点击上方按钮添加吧！</div>';
  return;
  }
 
@@ -4749,7 +4773,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  html += '<span class="lt-col lt-col-remaining" style="color:' + (remaining < 0.5 ? 'var(--coral)' : 'var(--green-dark)') + '">' + remaining + '</span>';
  html += '<span class="lt-col lt-col-rating">' + (fabric.quality ? self.renderStarDisplay(fabric.quality) : '-') + '</span>';
  html += '<span class="lt-col lt-col-weight">' + self.escapeHtml(fabric.weight || '-') + '</span>';
- html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')" title="编辑">✏️</button> <button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')" title="删除">🗑️</button></span>';
+ html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')" title="编辑">' + svgIcon('edit') + '</button> <button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')" title="删除">' + svgIcon('trash') + '</button></span>';
  html += '</div>';
  });
  html += '</div></div>';
@@ -4773,15 +4797,15 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  var fImgId = 'fimg_' + fabric.id;
  html += '<img id="' + fImgId + '" class="fabric-card-image" alt="">';
  } else {
- html += '<div class="fabric-card-image-placeholder">🧵</div>';
+ html += '<div class="fabric-card-image-placeholder"></div>';
  }
  /* 信息区域 */
  html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header">';
  html += '<span class="fabric-card-name">' + self.escapeHtml(fabric.name) + '</span>';
  html += '<div class="fabric-card-actions">';
- html += '<button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')"title="编辑">✏️</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')"title="删除">🗑️</button>';
+ html += '<button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
  html += '</div></div>';
  html += '<div class="fabric-card-body">';
  if (fabric.shop) {
@@ -4845,7 +4869,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  html += '<span style="color:var(--text);">' + self.escapeHtml(s.fabricName) + ' — 报废 ' + s.meters + ' 米</span>';
  html += '<span style="display:flex;align-items:center;gap:8px;">';
  html += '<span style="color:var(--text-light);">' + self.escapeHtml(s.date || '') + '</span>';
- html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteScrap(\'' + s.id + '\')" title="撤销报废" style="font-size:11px;">↩️</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteScrap(\'' + s.id + '\')" title="撤销报废" style="font-size:11px;">↺</button>';
  html += '</span></div>';
  });
  html += '</div>';
@@ -5000,7 +5024,7 @@ const ProductController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
 
  select.onchange = function() {
@@ -5029,7 +5053,7 @@ populateUserOptions(selectedValue) {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
 
  select.onchange = function() {
@@ -5084,7 +5108,7 @@ select.appendChild(o);
 
 var addOpt = document.createElement('option');
 addOpt.value = '__add_new__';
-addOpt.textContent = '➕ 新增选项...';
+addOpt.textContent = '+ 新增选项...';
 select.appendChild(addOpt);
 
 select.onchange = function() {
@@ -5258,7 +5282,7 @@ this.imageKey = '';
 document.getElementById('productImageThumb').src = '';
 document.getElementById('productImagePreview').style.display = 'none';
 document.getElementById('productImageInput').value = '';
-document.getElementById('productImageArea').querySelector('.upload-hint').textContent = '📷 点击上传或 Ctrl+V 粘贴';
+document.getElementById('productImageArea').querySelector('.upload-hint').textContent = '点击上传或 Ctrl+V 粘贴';
 },
 
 openForm(productId) {
@@ -5591,7 +5615,7 @@ overlay.style.cssText = 'position:fixed;inset:0;background:rgba(30,30,30,0.3);ba
 var box = document.createElement('div');
 box.style.cssText = 'background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.15);padding:28px;max-width:440px;width:100%;border:1px solid var(--border);animation:formSlideIn 0.3s ease;';
 box.innerHTML =
-'<div style="font-size:18px;font-weight:700;color:var(--blue-dark);margin-bottom:18px;">🌐 发布为作品</div>' +
+'<div style="font-size:18px;font-weight:700;color:var(--blue-dark);margin-bottom:18px;">发布为作品</div>' +
 noImageHint +
 '<div class="form-group"><label>作品标题</label><input type="text" id="publishTitle" value="' + this.escapeHtml(product.name || '') + '"></div>' +
 '<div class="form-group"><label>作品描述（可选）</label><input type="text" id="publishDesc" placeholder="说点什么，比如制作心得"></div>' +
@@ -5701,7 +5725,7 @@ products = products.filter(function(p) { return PageFilter.matchItem('product', 
  
 if (products.length === 0) {
 container.className = 'product-list';
-container.innerHTML = '<div class="product-empty">✂️ 还没有制品记录，点击上方按钮添加吧！</div>';
+container.innerHTML = '<div class="product-empty">还没有制品记录，点击上方按钮添加吧！</div>';
 return;
 }
 
@@ -5732,7 +5756,7 @@ html += '<span class="lt-col lt-col-tutorial"><a href="' + ensureUrl(product.tut
 } else {
 html += '<span class="lt-col lt-col-tutorial">-</span>';
 }
-html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">➕</button> <button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')" title="编辑">✏️</button> <button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')" title="删除">🗑️</button></span>';
+html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">再做一件</button> <button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')" title="编辑">' + svgIcon('edit') + '</button> <button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')" title="删除">' + svgIcon('trash') + '</button></span>';
 html += '</div>';
 });
 html += '</div></div>';
@@ -5752,17 +5776,17 @@ if (product.image) {
 var pImgId = 'pimg_' + product.id;
 html += '<img id="' + pImgId + '" class="product-card-image" alt="">';
 } else {
-html += '<div class="product-card-image-placeholder">✂️</div>';
+html += '<div class="product-card-image-placeholder"></div>';
 }
 /* 信息区域 */
 html += '<div class="product-card-info">';
 html += '<div class="product-card-header">';
 html += '<span class="product-card-name">' + self.escapeHtml(product.name) + '</span>';
 html += '<div class="product-card-actions">';
-html += '<button class="btn btn-icon" style="color:var(--blue-dark)" onclick="ProductController.openPublishDialog(\'' + product.id + '\')" title="发布为作品">📤</button>';
-html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">➕</button>';
-html += '<button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')"title="编辑">✏️</button>';
-html += '<button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')"title="删除">🗑️</button>';
+html += '<button class="btn btn-icon" style="color:var(--blue-dark)" onclick="ProductController.openPublishDialog(\'' + product.id + '\')" title="发布为作品">发布</button>';
+html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">再做一件</button>';
+html += '<button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
+html += '<button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
 html += '</div></div>';
 html += '<div class="product-card-body">';
 if (product.category) {
@@ -5872,7 +5896,7 @@ const TodoController = {
  document.getElementById('todoFormImageThumb').src = '';
  document.getElementById('todoFormImagePreview').style.display = 'none';
  document.getElementById('todoFormImageInput').value = '';
- document.getElementById('todoFormImageArea').querySelector('.upload-hint').textContent = '📷 点击或拖拽上传图片';
+ document.getElementById('todoFormImageArea').querySelector('.upload-hint').textContent = '点击或拖拽上传图片';
  },
 
  populateCategoryOptions(selectedValue) {
@@ -5888,7 +5912,7 @@ const TodoController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
@@ -5916,7 +5940,7 @@ const TodoController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
@@ -5944,7 +5968,7 @@ const TodoController = {
  });
  var addOpt = document.createElement('option');
  addOpt.value = '__add_new__';
- addOpt.textContent = '➕ 新增选项...';
+ addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
@@ -6131,7 +6155,7 @@ const TodoController = {
  todos = todos.filter(function(t) { return PageFilter.matchItem('todo', t); });
 
  if (todos.length === 0) {
- container.innerHTML = '<div class="todo-empty">📋 还没有待做项，点击上方按钮添加吧！</div>';
+ container.innerHTML = '<div class="todo-empty">还没有待做项，点击上方按钮添加吧！</div>';
  return;
  }
 
@@ -6145,9 +6169,9 @@ const TodoController = {
  html += '<div class="todo-item-body">';
  html += '<div class="todo-item-header"><span class="todo-item-name">' + self.escapeHtml(todo.name) + '</span>';
  html += '<div class="todo-item-header-actions">';
- html += '<button class="btn btn-icon btn-green" onclick="TodoController.openForm(\'' + todo.id + '\')"title="编辑">✏️</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="TodoController.deleteTodo(\'' + todo.id + '\')"title="删除">🗑️</button>';
- html += '<button class="btn btn-icon" onclick="TodoController.completeTodo(\'' + todo.id + '\')"title="完成">✅</button>';
+ html += '<button class="btn btn-icon btn-green" onclick="TodoController.openForm(\'' + todo.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="TodoController.deleteTodo(\'' + todo.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
+ html += '<button class="btn btn-icon" onclick="TodoController.completeTodo(\'' + todo.id + '\')"title="完成">完成</button>';
  html += '</div></div>';
  /* 隐藏详情 */
  var todoExpanded = CardExpandState.getState('todo');
@@ -6319,7 +6343,7 @@ const DashboardController = {
  renderProAnalytics(fabrics, products) {
  var isPro = window.Auth && Auth.isPro();
  var html = '<div class="dashboard-card full-width" style="border-top-color:var(--purple);">';
- html += '<div class="dashboard-card-title" style="color:var(--purple-dark);">📈 数据分析 <span style="font-size:12px;color:var(--purple);">Pro</span></div>';
+ html += '<div class="dashboard-card-title" style="color:var(--purple-dark);">数据分析 <span style="font-size:12px;color:var(--purple);">Pro</span></div>';
 
  if (!isPro) {
  // 免费用户：预览 + 升级引导（需求 9.2）
@@ -6329,7 +6353,7 @@ const DashboardController = {
  html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">已消耗布料成本</span><span class="dashboard-stat-value">¥****</span></div>';
  html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">库存周转率</span><span class="dashboard-stat-value">**%</span></div>';
  html += '</div>';
- html += '<div style="text-align:center;margin-top:14px;"><button class="btn btn-purple" onclick="Paywall.show(\'analytics\')">⭐ 升级 Pro 解锁数据分析</button></div>';
+ html += '<div style="text-align:center;margin-top:14px;"><button class="btn btn-purple" onclick="Paywall.show(\'analytics\')">升级 Pro 解锁数据分析</button></div>';
  html += '</div></div>';
  return html;
  }
@@ -6362,7 +6386,7 @@ const DashboardController = {
  renderFabricStats(fabrics, products) {
  var stats = Calculator.fabricStats(fabrics, products);
  var html = '<div class="dashboard-card">';
- html += '<div class="dashboard-card-title">🧵 布料统计</div>';
+ html += '<div class="dashboard-card-title">布料统计</div>';
  html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">布料总数</span><span class="dashboard-stat-value">' + stats.total + '</span></div>';
  html += '<div class="dashboard-stat-row"><span class="dashboard-stat-label">总花费</span><span class="dashboard-stat-value">¥' + stats.totalSpent.toFixed(2) + '</span></div>';
 
@@ -6391,7 +6415,7 @@ const DashboardController = {
  renderPatternStats(products) {
  var stats = Calculator.patternStats(products);
  var html = '<div class="dashboard-card">';
- html += '<div class="dashboard-card-title">📐 纸样统计</div>';
+ html += '<div class="dashboard-card-title">纸样统计</div>';
  
 if (stats.length > 0) {
  html += '<div class="dashboard-bar-chart">';
@@ -6417,7 +6441,7 @@ if (stats.length > 0) {
  renderAvailableFabrics(fabrics, products) {
  var available = Calculator.availableFabrics(fabrics, products);
  var html = '<div class="dashboard-card">';
- html += '<div class="dashboard-card-title">📦 待使用布料清单</div>';
+ html += '<div class="dashboard-card-title">待使用布料清单</div>';
 
  if (available.length > 0) {
  html += '<div class="dashboard-fabric-list">';
@@ -6440,7 +6464,7 @@ if (stats.length > 0) {
  var catStats = Calculator.productCategoryStats(products);
  var userStats = Calculator.productUserStats(products);
  var html = '<div class="dashboard-card">';
- html += '<div class="dashboard-card-title">✂️ 制品统计</div>';
+ html += '<div class="dashboard-card-title">制品统计</div>';
 
  html += '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px">类别分布</div>';
  if (catStats.length > 0) {
@@ -6484,7 +6508,7 @@ if (stats.length > 0) {
  renderMonthlyTrend(fabrics, products) {
  var trend = Calculator.monthlyTrend(fabrics, products);
  var html = '<div class="dashboard-card full-width">';
- html += '<div class="dashboard-card-title">📈 月度趋势</div>';
+ html += '<div class="dashboard-card-title">月度趋势</div>';
 
  if (trend.length > 0) {
  html += '<table class="dashboard-trend-table">';
@@ -6510,7 +6534,7 @@ if (stats.length > 0) {
  return remaining > 0 && f.image;
  });
  var html = '<div class="dashboard-card full-width">';
- html += '<div class="dashboard-card-title">🖼️ 布料库存</div>';
+ html += '<div class="dashboard-card-title">布料库存</div>';
 
  if (withImage.length > 0) {
  html += '<div class="dashboard-gallery-grid">';
@@ -6538,7 +6562,7 @@ if (stats.length > 0) {
  var self = this;
  var withImage = products.filter(function(p) { return p.image; });
  var html = '<div class="dashboard-card full-width">';
- html += '<div class="dashboard-card-title">🎨 制品作品展示</div>';
+ html += '<div class="dashboard-card-title">制品作品展示</div>';
 
  if (withImage.length > 0) {
  html += '<div class="dashboard-gallery-grid">';
@@ -6891,7 +6915,7 @@ open(fieldName) {
 
 var upBtn = document.createElement('button');
  upBtn.className = 'btn-move-option';
- upBtn.textContent = '⬆️';
+ upBtn.textContent = '↑';
  upBtn.title = '上移';
  if (idx === 0) {
  upBtn.style.visibility = 'hidden';
@@ -6903,7 +6927,7 @@ var upBtn = document.createElement('button');
 
  var downBtn = document.createElement('button');
  downBtn.className = 'btn-move-option';
- downBtn.textContent = '⬇️';
+ downBtn.textContent = '↓';
  downBtn.title = '下移';
  if (idx === options.length - 1) {
  downBtn.style.visibility = 'hidden';
@@ -6915,7 +6939,7 @@ var upBtn = document.createElement('button');
  
  var editBtn = document.createElement('button');
  editBtn.className = 'btn-edit-option';
- editBtn.textContent = '✏️';
+ editBtn.innerHTML = svgIcon('edit');
  editBtn.title = '编辑';
  editBtn.addEventListener('click', function() {
  self.editOption(field, opt);
@@ -6923,7 +6947,7 @@ var upBtn = document.createElement('button');
 
  var deleteBtn = document.createElement('button');
  deleteBtn.className = 'btn-delete-option';
- deleteBtn.textContent = '🗑️';
+ deleteBtn.innerHTML = svgIcon('trash');
  deleteBtn.title = '删除';
  deleteBtn.addEventListener('click', function() {
  self.deleteOption(field, opt);
@@ -7165,7 +7189,7 @@ const PatternController = {
  select.appendChild(o);
  });
  var addOpt = document.createElement('option');
- addOpt.value = '__add_new__'; addOpt.textContent = '➕ 新增选项...';
+ addOpt.value = '__add_new__'; addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
@@ -7294,7 +7318,7 @@ const PatternController = {
 
  if (patterns.length === 0) {
  container.className = 'fabric-list';
- container.innerHTML = '<div class="fabric-empty">📐 还没有纸样记录，点击上方按钮添加吧！</div>';
+ container.innerHTML = '<div class="fabric-empty">还没有纸样记录，点击上方按钮添加吧！</div>';
  return;
  }
 
@@ -7307,7 +7331,7 @@ const PatternController = {
  html += '<span class="lt-col lt-col-shop">' + self.escapeHtml(p.brand || '-') + '</span>';
  html += '<span class="lt-col lt-col-category">' + self.escapeHtml(p.code || '-') + '</span>';
  html += '<span class="lt-col lt-col-category">' + self.escapeHtml(p.category || '-') + '</span>';
- html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">✏️</button> <button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">🗑️</button></span>';
+ html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">' + svgIcon('edit') + '</button> <button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">' + svgIcon('trash') + '</button></span>';
  html += '</div>';
  });
  html += '</div></div>';
@@ -7320,12 +7344,12 @@ const PatternController = {
  html += '<div class="fabric-card" style="border-top:none;">';
  /* 图片区域 */
  if (p.image) { html += '<img id="ptimg_' + p.id + '" class="fabric-card-image" alt="">'; }
- else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#E0F0ED,#ECF5F3);">📐</div>'; }
+ else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#E0F0ED,#ECF5F3);"></div>'; }
  /* 信息区域 */
  html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(p.name) + '</span>';
- html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">✏️</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">🗑️</button></div></div>';
+ html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">' + svgIcon('edit') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
  html += '<div class="fabric-card-body">';
  if (p.brand) html += '<div class="fabric-card-row"><span class="fabric-card-label">来源</span><span class="fabric-card-value">' + self.escapeHtml(p.brand) + '</span></div>';
  if (p.code) html += '<div class="fabric-card-row"><span class="fabric-card-label">编号</span><span class="fabric-card-value">' + self.escapeHtml(p.code) + '</span></div>';
@@ -7409,7 +7433,7 @@ const NotionController = {
  select.appendChild(o);
  });
  var addOpt = document.createElement('option');
- addOpt.value = '__add_new__'; addOpt.textContent = '➕ 新增选项...';
+ addOpt.value = '__add_new__'; addOpt.textContent = '+ 新增选项...';
  select.appendChild(addOpt);
  select.onchange = function() {
  if (select.value === '__add_new__') {
@@ -7551,7 +7575,7 @@ const NotionController = {
 
  if (notions.length === 0) {
  container.className = 'fabric-list';
- container.innerHTML = '<div class="fabric-empty">🧷 还没有辅料记录，点击上方按钮添加吧！</div>';
+ container.innerHTML = '<div class="fabric-empty">还没有辅料记录，点击上方按钮添加吧！</div>';
  return;
  }
 
@@ -7566,7 +7590,7 @@ const NotionController = {
  html += '<span class="lt-col lt-col-meters">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span>';
  html += '<span class="lt-col lt-col-price">¥' + n.price + '</span>';
  html += '<span class="lt-col lt-col-date">' + self.escapeHtml(n.purchaseDate || '-') + '</span>';
- html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">✏️</button> <button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">🗑️</button></span>';
+ html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">' + svgIcon('edit') + '</button> <button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></span>';
  html += '</div>';
  });
  html += '</div></div>';
@@ -7579,12 +7603,12 @@ const NotionController = {
  html += '<div class="fabric-card" style="border-top:none;">';
  /* 图片区域 */
  if (n.image) { html += '<img id="ntimg_' + n.id + '" class="fabric-card-image" alt="">'; }
- else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#F5EFD8,#F0ECE0);">🧷</div>'; }
+ else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#F5EFD8,#F0ECE0);"></div>'; }
  /* 信息区域 */
  html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(n.name) + '</span>';
- html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">✏️</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">🗑️</button></div></div>';
+ html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">' + svgIcon('edit') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
  html += '<div class="fabric-card-body">';
  if (n.category) html += '<div class="fabric-card-row"><span class="fabric-card-label">类别</span><span class="fabric-card-value">' + self.escapeHtml(n.category) + '</span></div>';
  html += '<div class="fabric-card-row"><span class="fabric-card-label">数量</span><span class="fabric-card-value">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span></div>';
@@ -7682,7 +7706,7 @@ const PageFilter = {
  var fields = this.FIELDS[page] || [];
  if (fields.length === 0) { container.innerHTML = ''; return; }
 
- var html = '<span class="filter-label">🔍 筛选：</span>';
+ var html = '<span class="filter-label">筛选：</span>';
  fields.forEach(function(field) {
  var val = self.filters[page][field.key] || '';
  if (field.type === 'text') {
@@ -7962,7 +7986,7 @@ const HomeController = {
  var totalCount = results.fabric.length + results.product.length + results.todo.length + (results.pattern || []).length + (results.notion || []).length;
 
  if (totalCount === 0) {
- container.innerHTML = '<div class="home-empty">🔍 没有找到匹配的结果</div>';
+ container.innerHTML = '<div class="home-empty">没有找到匹配的结果</div>';
  return;
  }
 
@@ -7970,7 +7994,7 @@ const HomeController = {
 
  if (results.fabric.length > 0) {
  html += '<div class="home-results-section">';
- html += '<div class="home-results-title fabric">🧵 布料（' + results.fabric.length + '）</div>';
+ html += '<div class="home-results-title fabric">布料（' + results.fabric.length + '）</div>';
  results.fabric.forEach(function(f) {
  html += '<div class="home-result-item" onclick="Router.navigate(\'fabric\');setTimeout(function(){FabricController.openForm(\'' + f.id + '\')},100);">';
  html += '<div><span class="home-result-name">' + self.escapeHtml(f.name) + '</span>';
@@ -7983,7 +8007,7 @@ const HomeController = {
 
  if (results.product.length > 0) {
  html += '<div class="home-results-section">';
- html += '<div class="home-results-title product">✂️ 制品（' + results.product.length + '）</div>';
+ html += '<div class="home-results-title product">制品（' + results.product.length + '）</div>';
  results.product.forEach(function(p) {
  html += '<div class="home-result-item" onclick="Router.navigate(\'product\');setTimeout(function(){ProductController.openForm(\'' + p.id + '\')},100);">';
  html += '<div><span class="home-result-name">' + self.escapeHtml(p.name) + '</span>';
@@ -7996,7 +8020,7 @@ const HomeController = {
 
  if (results.todo.length > 0) {
  html += '<div class="home-results-section">';
- html += '<div class="home-results-title todo">📋 待做（' + results.todo.length + '）</div>';
+ html += '<div class="home-results-title todo">待做（' + results.todo.length + '）</div>';
  results.todo.forEach(function(t) {
  html += '<div class="home-result-item" onclick="Router.navigate(\'todo\');setTimeout(function(){TodoController.openForm(\'' + t.id + '\')},100);">';
  html += '<div><span class="home-result-name">' + self.escapeHtml(t.name) + '</span>';
@@ -8009,7 +8033,7 @@ const HomeController = {
 
  if ((results.pattern || []).length > 0) {
  html += '<div class="home-results-section">';
- html += '<div class="home-results-title" style="color:var(--teal-dark);border-bottom-color:var(--teal);">📐 纸样（' + results.pattern.length + '）</div>';
+ html += '<div class="home-results-title" style="color:var(--teal-dark);border-bottom-color:var(--teal);">纸样（' + results.pattern.length + '）</div>';
  results.pattern.forEach(function(p) {
  html += '<div class="home-result-item" onclick="Router.navigate(\'pattern\');setTimeout(function(){PatternController.openForm(\'' + p.id + '\')},100);">';
  html += '<div><span class="home-result-name">' + self.escapeHtml(p.name) + '</span>';
@@ -8022,7 +8046,7 @@ const HomeController = {
 
  if ((results.notion || []).length > 0) {
  html += '<div class="home-results-section">';
- html += '<div class="home-results-title" style="color:var(--amber-dark);border-bottom-color:var(--amber);">🧷 辅料（' + results.notion.length + '）</div>';
+ html += '<div class="home-results-title" style="color:var(--amber-dark);border-bottom-color:var(--amber);">辅料（' + results.notion.length + '）</div>';
  results.notion.forEach(function(n) {
  html += '<div class="home-result-item" onclick="Router.navigate(\'notion\');setTimeout(function(){NotionController.openForm(\'' + n.id + '\')},100);">';
  html += '<div><span class="home-result-name">' + self.escapeHtml(n.name) + '</span>';
@@ -8109,7 +8133,7 @@ const CommunityController = {
  renderCards(posts, container) {
  var self = this;
  if (!posts || !posts.length) {
- var msg = this.currentTab === 'mine' ? '还没有发布作品。去"制品管理"点 🌐 发布第一个作品吧～'
+ var msg = this.currentTab === 'mine' ? '还没有发布作品。去"制品管理"点发布按钮发布第一个作品吧～'
  : this.currentTab === 'fav' ? '还没有收藏任何作品。'
  : '还没有公开作品，快来发布第一个！';
  container.innerHTML = '<div class="community-empty">' + msg + '</div>';
@@ -8121,7 +8145,7 @@ const CommunityController = {
  if (p.image_url) {
  html += '<img class="post-card-img" src="' + self.escapeAttr(p.image_url) + '" alt="">';
  } else {
- html += '<div class="post-card-img-ph">✂️</div>';
+ html += '<div class="post-card-img-ph"></div>';
  }
  html += '<div class="post-card-body">';
  html += '<div class="post-card-title">' + self.escapeHtml(p.title || '未命名') + '</div>';
@@ -8153,10 +8177,10 @@ const CommunityController = {
  // 社区仅展示最终成本，不显示布料/辅料明细
  if (post.pattern_snapshot && post.pattern_snapshot.name) {
  var pat = post.pattern_snapshot;
- info += '<div class="post-detail-info-row"><span>📐 纸样</span><span>' + self.escapeHtml(pat.name) + (pat.brand ? ' / ' + self.escapeHtml(pat.brand) : '') + '</span></div>';
+ info += '<div class="post-detail-info-row"><span>纸样</span><span>' + self.escapeHtml(pat.name) + (pat.brand ? ' / ' + self.escapeHtml(pat.brand) : '') + '</span></div>';
  }
  if (post.show_cost && post.cost_snapshot) {
- info += '<div class="post-detail-info-row"><span>💰 成本</span><span>¥' + (post.cost_snapshot.total || 0) + '</span></div>';
+ info += '<div class="post-detail-info-row"><span>成本</span><span>¥' + (post.cost_snapshot.total || 0) + '</span></div>';
  }
  if (post.category) {
  info += '<div class="post-detail-info-row"><span>分类</span><span>' + self.escapeHtml(post.category) + '</span></div>';
