@@ -32,6 +32,9 @@
 
 > ⚠️ 千万别只在一边改。忘了同步 prod 会导致线上功能报错；忘了同步 staging 会让本地测不出问题。
 
+## 基线快照
+`0000_baseline_schema.sql` 是 2026-07-27 从 prod 导出的完整结构（表/约束/函数RPC/触发器/RLS/策略/Storage），用于灾备重建或初始化新环境。它是**起点快照**，之后的结构改动一律新建增量迁移文件，不要改它。
+
 ## 环境与库的对应
 - 本地 `file://` / `localhost` → **staging** 库
 - 线上 `chuchengfeixu.github.io` → **prod** 库
