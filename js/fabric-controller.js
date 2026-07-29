@@ -603,6 +603,51 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  return html;
  },
 
+ /* 详情浮窗 + 内联编辑（点击卡片打开） */
+ openDetail(id) {
+ var self = this;
+ var fabric = Store.getById(Store.KEYS.FABRICS, id);
+ if (!fabric) { return; }
+
+ function buildFields() {
+ var f = Store.getById(Store.KEYS.FABRICS, id);
+ if (!f) { return []; }
+ var products = Store.getAll(Store.KEYS.PRODUCTS);
+ var scraps = Store.getAll(Store.KEYS.SCRAPS);
+ var up = Calculator.unitPrice(f.price, f.meters);
+ var remaining = Calculator.remainingMeters(id, f.meters, products, scraps);
+ return [
+ { key: 'name', label: '名称', type: 'text', value: f.name, required: true },
+ { key: 'shop', label: '店铺', type: 'select', value: f.shop || '', options: OptionController.getOptions('fabricShop'), allowAddKey: 'fabricShop' },
+ { key: 'code', label: '编号', type: 'text', value: f.code || '' },
+ { key: 'meters', label: '总米数', type: 'number', value: f.meters },
+ { key: 'width', label: '幅宽', type: 'select', value: f.width || '', options: OptionController.getOptions('fabricWidth'), allowAddKey: 'fabricWidth' },
+ { key: 'weight', label: '克重', type: 'text', value: f.weight || '' },
+ { key: 'price', label: '价格', type: 'number', value: f.price, prefix: '¥' },
+ { key: 'purchaseDate', label: '购买日期', type: 'date', value: f.purchaseDate || '' },
+ { key: 'quality', label: '评级', type: 'stars', value: f.quality || 0 },
+ { key: '__unit', label: '单价', type: 'readonly', value: (f.price && f.meters) ? ('¥' + up.toFixed(2) + '/米') : '', format: function(v) { return v || '—'; } },
+ { key: '__remaining', label: '剩余', type: 'readonly', value: remaining + ' / ' + (f.meters || 0) + ' 米' }
+ ];
+ }
+
+ DetailModal.open({
+ title: fabric.name || '布料详情',
+ image: { value: fabric.image, editable: true, onChange: function(ref) { Store.update(Store.KEYS.FABRICS, id, { image: ref }); self.renderList(); } },
+ fields: buildFields(),
+ rebuild: buildFields,
+ onSave: function(key, value) {
+ if (key === 'name' && !String(value).trim()) { return '名称不能为空'; }
+ var patch = {};
+ patch[key] = value;
+ Store.update(Store.KEYS.FABRICS, id, patch);
+ if (key === 'name') { var t = document.getElementById('detailModalTitle'); if (t) { t.textContent = value; } }
+ self.renderList();
+ return null;
+ }
+ });
+ },
+
  renderList() {
  var self = this;
  var fabrics = Store.getAll(Store.KEYS.FABRICS);
@@ -678,7 +723,7 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  var remaining = Calculator.remainingMeters(fabric.id, fabric.meters, products, scraps);
  var remainingClass = remaining < 0.5 ? 'fabric-card-remaining low' : 'fabric-card-remaining';
 
- html += '<div class="fabric-card">';
+ html += '<div class="fabric-card" onclick="FabricController.openDetail(\'' + fabric.id + '\')" title="点击查看/编辑">';
  /* 图片区域 */
  if (fabric.image) {
  var fImgId = 'fimg_' + fabric.id;
@@ -691,9 +736,8 @@ Tesseract.recognize(imageData, 'chi_sim+eng', {
  html += '<div class="fabric-card-header">';
  html += '<span class="fabric-card-name">' + self.escapeHtml(fabric.name) + '</span>';
  html += '<div class="fabric-card-actions">';
- html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="FabricController.addMeters(\'' + fabric.id + '\')"title="追加米数">' + svgIcon('plus') + '</button>';
- html += '<button class="btn btn-icon btn-pink" onclick="FabricController.openForm(\'' + fabric.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="FabricController.deleteFabric(\'' + fabric.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
+ html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="event.stopPropagation();FabricController.addMeters(\'' + fabric.id + '\')"title="追加米数">' + svgIcon('plus') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();FabricController.deleteFabric(\'' + fabric.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
  html += '</div></div>';
  html += '<div class="fabric-card-body">';
  if (fabric.shop) {

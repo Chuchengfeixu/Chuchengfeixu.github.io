@@ -514,6 +514,7 @@ function computeCost(product) {
   });
   return { total: Math.round(total * 100) / 100, currency: 'CNY', basis: 'fabric-only' };
 }
+window.computeCost = computeCost;   // 暴露给 product-controller 详情浮窗显示成本
 
 // 从制品的 patternId 解析纸样公开信息（名称/品牌/编码）
 function resolvePatternPublicInfo(product) {

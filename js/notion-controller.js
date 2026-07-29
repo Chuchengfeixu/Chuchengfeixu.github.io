@@ -211,6 +211,40 @@ const NotionController = {
  });
  },
 
+ /* 详情浮窗 + 内联编辑（点击卡片打开） */
+ openDetail(id) {
+ var self = this;
+ var n = Store.getById(Store.KEYS.NOTIONS, id);
+ if (!n) { return; }
+ function buildFields() {
+ var x = Store.getById(Store.KEYS.NOTIONS, id);
+ if (!x) { return []; }
+ return [
+ { key: 'name', label: '名称', type: 'text', value: x.name, required: true },
+ { key: 'category', label: '类别', type: 'select', value: x.category || '', options: OptionController.getOptions('notionCategory'), allowAddKey: 'notionCategory' },
+ { key: 'shop', label: '店铺', type: 'select', value: x.shop || '', options: OptionController.getOptions('notionShop'), allowAddKey: 'notionShop' },
+ { key: 'quantity', label: '数量', type: 'number', value: x.quantity },
+ { key: 'unit', label: '单位', type: 'select', value: x.unit || '', options: OptionController.getOptions('notionUnit'), allowAddKey: 'notionUnit' },
+ { key: 'price', label: '价格', type: 'number', value: x.price, prefix: '¥' },
+ { key: 'purchaseDate', label: '购买日期', type: 'date', value: x.purchaseDate || '' }
+ ];
+ }
+ DetailModal.open({
+ title: n.name || '辅料详情',
+ image: { value: n.image, editable: true, onChange: function(ref) { Store.update(Store.KEYS.NOTIONS, id, { image: ref }); self.renderList(); } },
+ fields: buildFields(),
+ rebuild: buildFields,
+ onSave: function(key, value) {
+ if (key === 'name' && !String(value).trim()) { return '名称不能为空'; }
+ var patch = {}; patch[key] = value;
+ Store.update(Store.KEYS.NOTIONS, id, patch);
+ if (key === 'name') { var t = document.getElementById('detailModalTitle'); if (t) { t.textContent = value; } }
+ self.renderList();
+ return null;
+ }
+ });
+ },
+
  renderList() {
  var self = this;
  var notions = Store.getAll(Store.KEYS.NOTIONS);
@@ -249,15 +283,15 @@ const NotionController = {
  container.className = 'fabric-list';
  var html = '';
  notions.forEach(function(n) {
- html += '<div class="fabric-card" style="border-top:none;">';
+ html += '<div class="fabric-card" style="border-top:none;" onclick="NotionController.openDetail(\'' + n.id + '\')" title="点击查看/编辑">';
  /* 图片区域 */
  if (n.image) { html += '<img id="ntimg_' + n.id + '" class="fabric-card-image" alt="">'; }
  else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#F5EFD8,#F0ECE0);"></div>'; }
  /* 信息区域 */
  html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(n.name) + '</span>';
- html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--green-dark)" onclick="NotionController.addQuantity(\'' + n.id + '\')" title="追加数量">' + svgIcon('plus') + '</button><button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">' + svgIcon('edit') + '</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
+ html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--green-dark)" onclick="event.stopPropagation();NotionController.addQuantity(\'' + n.id + '\')" title="追加数量">' + svgIcon('plus') + '</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
  html += '<div class="fabric-card-body">';
  if (n.category) html += '<div class="fabric-card-row"><span class="fabric-card-label">类别</span><span class="fabric-card-value">' + self.escapeHtml(n.category) + '</span></div>';
  html += '<div class="fabric-card-row"><span class="fabric-card-label">数量</span><span class="fabric-card-value">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span></div>';

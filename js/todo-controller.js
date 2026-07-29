@@ -311,6 +311,41 @@ const TodoController = {
  ProductController.openFormFromTodo(todo);
  },
 
+ /* 详情浮窗 + 内联编辑（点击条目打开） */
+ openDetail(id) {
+ var self = this;
+ var todo = Store.getById(Store.KEYS.TODOS, id);
+ if (!todo) { return; }
+ function buildFields() {
+ var x = Store.getById(Store.KEYS.TODOS, id);
+ if (!x) { return []; }
+ return [
+ { key: 'name', label: '名称', type: 'text', value: x.name, required: true },
+ { key: 'category', label: '类别', type: 'select', value: x.category || '', options: OptionController.getOptions('productCategory'), allowAddKey: 'productCategory' },
+ { key: 'plannedDate', label: '计划完成', type: 'date', value: x.plannedDate || '' },
+ { key: 'user', label: '使用者', type: 'select', value: x.user || '', options: OptionController.getOptions('productUser'), allowAddKey: 'productUser' },
+ { key: 'patternSource', label: '纸样来源', type: 'select', value: x.patternSource || '', options: OptionController.getOptions('patternSource'), allowAddKey: 'patternSource' },
+ { key: 'patternCode', label: '纸样编号', type: 'text', value: x.patternCode || '' },
+ { key: 'tutorialLink', label: '教程链接', type: 'text', value: x.tutorialLink || '' },
+ { key: 'note', label: '备注', type: 'textarea', value: x.note || '' }
+ ];
+ }
+ DetailModal.open({
+ title: todo.name || '待做详情',
+ image: { value: todo.image, editable: true, onChange: function(ref) { Store.update(Store.KEYS.TODOS, id, { image: ref }); self.renderList(); } },
+ fields: buildFields(),
+ rebuild: buildFields,
+ onSave: function(key, value) {
+ if (key === 'name' && !String(value).trim()) { return '名称不能为空'; }
+ var patch = {}; patch[key] = value;
+ Store.update(Store.KEYS.TODOS, id, patch);
+ if (key === 'name') { var t = document.getElementById('detailModalTitle'); if (t) { t.textContent = value; } }
+ self.renderList();
+ return null;
+ }
+ });
+ },
+
  getActiveTodos() {
  var todos = Store.getAll(Store.KEYS.TODOS);
  return todos
@@ -334,7 +369,7 @@ const TodoController = {
 
  var html = '';
  todos.forEach(function(todo) {
- html += '<div class="todo-item" draggable="true" data-id="' + todo.id + '">';
+ html += '<div class="todo-item" draggable="true" data-id="' + todo.id + '" onclick="TodoController.openDetail(\'' + todo.id + '\')" title="点击查看/编辑" style="cursor:pointer;">';
  if (todo.image) {
  var tImgId = 'timg_' + todo.id;
  html += '<img id="' + tImgId + '" class="todo-item-image" alt="" style="max-height:80px;height:auto;">';
@@ -342,9 +377,8 @@ const TodoController = {
  html += '<div class="todo-item-body">';
  html += '<div class="todo-item-header"><span class="todo-item-name">' + self.escapeHtml(todo.name) + '</span>';
  html += '<div class="todo-item-header-actions">';
- html += '<button class="btn btn-icon btn-green" onclick="TodoController.openForm(\'' + todo.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="TodoController.deleteTodo(\'' + todo.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
- html += '<button class="btn btn-icon" onclick="TodoController.completeTodo(\'' + todo.id + '\')"title="完成">完成</button>';
+ html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();TodoController.deleteTodo(\'' + todo.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
+ html += '<button class="btn btn-icon" onclick="event.stopPropagation();TodoController.completeTodo(\'' + todo.id + '\')"title="完成">完成</button>';
  html += '</div></div>';
  /* 隐藏详情 */
  var todoExpanded = CardExpandState.getState('todo');
@@ -371,9 +405,9 @@ const TodoController = {
  html += '<div class="todo-item-note">备注：' + self.escapeHtml(todo.note) + '</div>';
  }
  html += '</div>';
- html += '<div class="card-expand-toggle" onclick="var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (todoExpanded ? '收起▴' : '展开▾') + '</div>';
+ html += '<div class="card-expand-toggle" onclick="event.stopPropagation();var d=this.previousElementSibling;if(d.style.display===\'none\'){d.style.display=\'block\';this.textContent=\'收起 ▴\';}else{d.style.display=\'none\';this.textContent=\'展开 ▾\';}">' + (todoExpanded ? '收起▴' : '展开▾') + '</div>';
  html += '</div>';
- html += '<span class="todo-drag-handle" title="拖拽排序">⠿</span>';
+ html += '<span class="todo-drag-handle" title="拖拽排序" onclick="event.stopPropagation();">⠿</span>';
  html += '</div>';
  });
 

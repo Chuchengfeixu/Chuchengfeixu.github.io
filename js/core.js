@@ -900,3 +900,284 @@ const CardExpandState = {
  }
 };
 
+
+
+/* ========== DetailModal 通用详情浮窗 + 单字段内联编辑 ==========
+ 用法：
+   DetailModal.open({
+     title: '标题',
+     image: { value: 'idb:xxx'|url, editable: true, onChange: function(ref){...} },   // 可选
+     fields: [ { key,label,type,value,options?,allowAddKey?,required?,prefix?,format? } ],
+     onSave: function(key, value){ ...保存...; return 错误字符串 | null },
+     rebuild: function(){ return 新的 fields 数组 }   // 可选：保存后重算（如单价/剩余）
+   }
+ 字段 type：text / number / date / select / textarea / stars / readonly
+ 交互：点字段值就地变输入框，回车或失焦保存，Esc 取消。 */
+const DetailModal = {
+  _config: null,
+  _editingKey: null,
+
+  _ensureDom() {
+    if (document.getElementById('detailModalOverlay')) { return; }
+    var ov = document.createElement('div');
+    ov.className = 'detail-modal-overlay';
+    ov.id = 'detailModalOverlay';
+    ov.innerHTML =
+      '<div class="detail-modal" role="dialog" aria-modal="true">' +
+        '<div class="detail-modal-head">' +
+          '<span class="detail-modal-title" id="detailModalTitle"></span>' +
+          '<button class="detail-modal-close" id="detailModalClose" title="关闭">\u2715</button>' +
+        '</div>' +
+        '<div class="detail-modal-image-wrap" id="detailModalImageWrap" style="display:none;"></div>' +
+        '<div class="detail-modal-body" id="detailModalBody"></div>' +
+        '<div class="detail-modal-foot" id="detailModalFoot"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var self = this;
+    document.getElementById('detailModalClose').addEventListener('click', function() { self.close(); });
+    ov.addEventListener('click', function(e) { if (e.target === ov) { self.close(); } });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && ov.classList.contains('show')) {
+        if (self._editingKey) { self._renderFields(); self._editingKey = null; }
+        else { self.close(); }
+      }
+    });
+  },
+
+  open(config) {
+    this._ensureDom();
+    this._config = config;
+    this._editingKey = null;
+    document.getElementById('detailModalTitle').textContent = config.title || '详情';
+    this._renderImage();
+    this._renderFields();
+    this._renderFoot();
+    document.getElementById('detailModalOverlay').classList.add('show');
+  },
+
+  close() {
+    var ov = document.getElementById('detailModalOverlay');
+    if (ov) { ov.classList.remove('show'); }
+    this._config = null;
+    this._editingKey = null;
+  },
+
+  _renderImage() {
+    var wrap = document.getElementById('detailModalImageWrap');
+    var img = this._config.image;
+    if (!img || (!img.value && !img.editable)) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+    var self = this;
+    wrap.style.display = '';
+    wrap.innerHTML = img.value
+      ? '<img class="detail-modal-image" alt="">' + (img.editable ? '<span class="detail-modal-image-hint">点击更换图片</span>' : '')
+      : '<div class="detail-modal-image-empty">' + (img.editable ? '点击上传图片' : '暂无图片') + '</div>';
+    if (img.value) {
+      var el = wrap.querySelector('.detail-modal-image');
+      if (el && window.loadIdbImage) { loadIdbImage(el, img.value); }
+    }
+    if (img.editable) {
+      wrap.style.cursor = 'pointer';
+      wrap.onclick = function() { self._pickImage(); };
+    } else {
+      wrap.style.cursor = '';
+      wrap.onclick = null;
+    }
+  },
+
+  _pickImage() {
+    var self = this;
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = function(e) {
+      var file = e.target.files[0];
+      if (!file || !file.type.startsWith('image/')) { return; }
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        guardImageUpload(function() {
+          var imageKey = 'img_' + generateUUID();
+          ImageStore.save(imageKey, ev.target.result);
+          var ref = 'idb:' + imageKey;
+          if (self._config.image.onChange) { self._config.image.onChange(ref); }
+          self._config.image.value = ref;
+          self._renderImage();
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  },
+
+  _renderFoot() {
+    var foot = document.getElementById('detailModalFoot');
+    var actions = this._config.actions || [];
+    if (!actions.length) { foot.style.display = 'none'; foot.innerHTML = ''; return; }
+    foot.style.display = '';
+    foot.innerHTML = '';
+    var self = this;
+    actions.forEach(function(a, i) {
+      var btn = document.createElement('button');
+      btn.className = 'btn ' + (a.className || 'btn-gray');
+      btn.innerHTML = (a.icon && window.svgIcon ? svgIcon(a.icon) + ' ' : '') + (a.label || '');
+      btn.addEventListener('click', function() { a.onClick(self); });
+      foot.appendChild(btn);
+    });
+  },
+
+  _renderFields() {
+    var body = document.getElementById('detailModalBody');
+    var self = this;
+    body.innerHTML = '';
+    (this._config.fields || []).forEach(function(field) {
+      var row = document.createElement('div');
+      row.className = 'detail-field';
+      row.setAttribute('data-key', field.key);
+
+      var label = document.createElement('span');
+      label.className = 'detail-field-label';
+      label.textContent = field.label;
+      row.appendChild(label);
+
+      var valWrap = document.createElement('span');
+      valWrap.className = 'detail-field-value';
+
+      if (field.type === 'stars') {
+        valWrap.classList.add('detail-field-stars');
+        self._renderStars(valWrap, field);
+      } else if (field.type === 'readonly') {
+        valWrap.classList.add('readonly');
+        valWrap.textContent = self._display(field);
+      } else {
+        valWrap.classList.add('editable');
+        valWrap.textContent = self._display(field);
+        valWrap.title = '点击编辑';
+        valWrap.addEventListener('click', function() { self._beginEdit(field.key, valWrap); });
+      }
+      row.appendChild(valWrap);
+      body.appendChild(row);
+    });
+  },
+
+  _display(field) {
+    if (field.format) { return field.format(field.value); }
+    var v = field.value;
+    if (v === null || v === undefined || v === '') { return '\u2014'; }
+    return (field.prefix || '') + v;
+  },
+
+  _renderStars(container, field) {
+    var self = this;
+    container.innerHTML = '';
+    var current = field.value || 0;
+    for (var i = 1; i <= 5; i++) {
+      (function(val) {
+        var star = document.createElement('span');
+        star.className = 'detail-star' + (val <= current ? ' active' : '');
+        star.textContent = '\u2605';
+        star.addEventListener('click', function() {
+          var newVal = (field.value === val) ? 0 : val;
+          self._save(field.key, newVal);
+        });
+        container.appendChild(star);
+      })(i);
+    }
+  },
+
+  _beginEdit(key, valWrap) {
+    var self = this;
+    if (this._editingKey && this._editingKey !== key) { this._renderFields(); }
+    this._editingKey = key;
+    var field = this._field(key);
+    if (!field) { return; }
+    valWrap.classList.remove('editable');
+    valWrap.innerHTML = '';
+
+    var input;
+    if (field.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'detail-field-input';
+      var opts = (field.options || []).slice();
+      var ph = document.createElement('option'); ph.value = ''; ph.textContent = '（未设置）';
+      input.appendChild(ph);
+      opts.forEach(function(o) {
+        var op = document.createElement('option'); op.value = o; op.textContent = o;
+        if (o === field.value) { op.selected = true; }
+        input.appendChild(op);
+      });
+      if (field.allowAddKey) {
+        var addOp = document.createElement('option'); addOp.value = '__add_new__'; addOp.textContent = '+ 新增选项...';
+        input.appendChild(addOp);
+      }
+      input.onchange = function() {
+        if (input.value === '__add_new__') {
+          input.value = field.value || '';
+          InputDialog.open({ title: '新增选项', placeholder: '请输入新的值' }).then(function(nv) {
+            if (nv && nv.trim()) {
+              OptionController.addOption(field.allowAddKey, nv.trim());
+              self._save(key, nv.trim());
+            } else { self._renderFields(); self._editingKey = null; }
+          });
+          return;
+        }
+        self._save(key, input.value);
+      };
+    } else if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'detail-field-input';
+      input.value = (field.value == null ? '' : field.value);
+      this._bindCommit(input, key);
+    } else {
+      input = document.createElement('input');
+      input.className = 'detail-field-input';
+      input.type = (field.type === 'number') ? 'number' : (field.type === 'date' ? 'date' : 'text');
+      if (field.type === 'number') { input.step = 'any'; }
+      input.value = (field.value == null ? '' : field.value);
+      this._bindCommit(input, key);
+    }
+
+    valWrap.appendChild(input);
+    input.focus();
+    if (input.select && field.type !== 'date' && field.type !== 'select') { try { input.select(); } catch (e) {} }
+  },
+
+  _bindCommit(input, key) {
+    var self = this;
+    var done = false;
+    function commit() {
+      if (done) { return; } done = true;
+      self._save(key, input.value);
+    }
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && input.tagName !== 'TEXTAREA') { e.preventDefault(); commit(); }
+      else if (e.key === 'Escape') { done = true; self._editingKey = null; self._renderFields(); }
+    });
+  },
+
+  _save(key, rawValue) {
+    var field = this._field(key);
+    var value = rawValue;
+    if (field && field.type === 'number') {
+      value = (rawValue === '' || rawValue === null) ? '' : (parseFloat(rawValue) || '');
+    } else if (typeof rawValue === 'string') {
+      value = rawValue.trim();
+    }
+    this._editingKey = null;
+    var err = this._config.onSave ? this._config.onSave(key, value) : null;
+    if (err) {
+      if (window.Toast) { Toast.show(err, 'error'); }
+      this._renderFields();
+      return;
+    }
+    if (this._config.rebuild) { this._config.fields = this._config.rebuild(); }
+    else if (field) { field.value = value; }
+    this._renderFields();
+  },
+
+  _field(key) {
+    var fields = (this._config && this._config.fields) || [];
+    for (var i = 0; i < fields.length; i++) { if (fields[i].key === key) { return fields[i]; } }
+    return null;
+  }
+};
+window.DetailModal = DetailModal;

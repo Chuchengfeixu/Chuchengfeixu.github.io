@@ -876,7 +876,7 @@ container.className = 'product-list';
 
 var html = '';
 products.forEach(function(product) {
-html += '<div class="product-card">';
+html += '<div class="product-card" onclick="ProductController.openDetail(\'' + product.id + '\')" title="点击查看/编辑">';
 /* 图片区域 */
 if (product.image) {
 var pImgId = 'pimg_' + product.id;
@@ -889,10 +889,9 @@ html += '<div class="product-card-info">';
 html += '<div class="product-card-header">';
 html += '<span class="product-card-name">' + self.escapeHtml(product.name) + '</span>';
 html += '<div class="product-card-actions">';
-html += '<button class="btn btn-icon" style="color:var(--blue-dark)" onclick="ProductController.openPublishDialog(\'' + product.id + '\')" title="发布为作品">' + svgIcon('share') + '</button>';
-html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">' + svgIcon('plus') + '</button>';
-html += '<button class="btn btn-icon btn-purple" onclick="ProductController.openForm(\'' + product.id + '\')"title="编辑">' + svgIcon('edit') + '</button>';
-html += '<button class="btn btn-icon btn-danger" onclick="ProductController.deleteProduct(\'' + product.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
+html += '<button class="btn btn-icon" style="color:var(--blue-dark)" onclick="event.stopPropagation();ProductController.openPublishDialog(\'' + product.id + '\')" title="发布为作品">' + svgIcon('share') + '</button>';
+html += '<button class="btn btn-icon" style="color:var(--green-dark)" onclick="event.stopPropagation();ProductController.duplicateProduct(\'' + product.id + '\')" title="再做一件">' + svgIcon('plus') + '</button>';
+html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();ProductController.deleteProduct(\'' + product.id + '\')"title="删除">' + svgIcon('trash') + '</button>';
 html += '</div></div>';
 html += '<div class="product-card-body">';
 if (product.category) {
@@ -921,6 +920,50 @@ container.innerHTML = html;
  if (imgEl) { loadIdbImage(imgEl, product.image); }
  }
  });
+},
+
+/* 详情浮窗 + 内联编辑（点击卡片打开）。布料用量/纸样联动仍用完整表单编辑 */
+openDetail(id) {
+var self = this;
+var product = Store.getById(Store.KEYS.PRODUCTS, id);
+if (!product) { return; }
+function buildFields() {
+var x = Store.getById(Store.KEYS.PRODUCTS, id);
+if (!x) { return []; }
+var pinfo = '';
+if (x.patternId) { var pt = Store.getById(Store.KEYS.PATTERNS, x.patternId); pinfo = pt ? ((pt.name || '') + (pt.code ? ' (' + pt.code + ')' : '')) : ''; }
+else if (x.patternSource || x.patternCode) { pinfo = (x.patternSource || '') + (x.patternCode ? ' ' + x.patternCode : ''); }
+var fu = (x.fabricUsages || []).map(function(u) { return (u.fabricName || '布料') + ' ' + (u.metersUsed || 0) + '米'; }).join('、');
+var cost = window.computeCost ? computeCost(x).total : null;
+return [
+{ key: 'name', label: '名称', type: 'text', value: x.name, required: true },
+{ key: 'category', label: '类别', type: 'select', value: x.category || '', options: OptionController.getOptions('productCategory'), allowAddKey: 'productCategory' },
+{ key: 'completedDate', label: '完成日期', type: 'date', value: x.completedDate || '' },
+{ key: 'user', label: '使用者', type: 'select', value: x.user || '', options: OptionController.getOptions('productUser'), allowAddKey: 'productUser' },
+{ key: 'quantity', label: '数量', type: 'number', value: x.quantity || 1 },
+{ key: 'tutorialLink', label: '教程链接', type: 'text', value: x.tutorialLink || '' },
+{ key: '__pattern', label: '纸样', type: 'readonly', value: pinfo, format: function(v) { return v || '—'; } },
+{ key: '__fabrics', label: '布料用量', type: 'readonly', value: fu, format: function(v) { return v || '—'; } },
+{ key: '__cost', label: '成本', type: 'readonly', value: (cost != null ? '¥' + cost : ''), format: function(v) { return v || '—'; } }
+];
+}
+DetailModal.open({
+title: product.name || '制品详情',
+image: { value: product.image, editable: true, onChange: function(ref) { Store.update(Store.KEYS.PRODUCTS, id, { image: ref }); self.renderList(); } },
+fields: buildFields(),
+rebuild: buildFields,
+actions: [
+{ label: '编辑布料/纸样等', icon: 'edit', className: 'btn-purple', onClick: function(dm) { dm.close(); self.openForm(id); } }
+],
+onSave: function(key, value) {
+if (key === 'name' && !String(value).trim()) { return '名称不能为空'; }
+var patch = {}; patch[key] = value;
+Store.update(Store.KEYS.PRODUCTS, id, patch);
+if (key === 'name') { var t = document.getElementById('detailModalTitle'); if (t) { t.textContent = value; } }
+self.renderList();
+return null;
+}
+});
 },
 
 escapeHtml(str) {

@@ -185,6 +185,39 @@ const PatternController = {
  });
  },
 
+ /* 详情浮窗 + 内联编辑（点击卡片打开） */
+ openDetail(id) {
+ var self = this;
+ var p = Store.getById(Store.KEYS.PATTERNS, id);
+ if (!p) { return; }
+ function buildFields() {
+ var x = Store.getById(Store.KEYS.PATTERNS, id);
+ if (!x) { return []; }
+ return [
+ { key: 'name', label: '名称', type: 'text', value: x.name, required: true },
+ { key: 'brand', label: '来源', type: 'select', value: x.brand || '', options: OptionController.getOptions('patternBrand'), allowAddKey: 'patternBrand' },
+ { key: 'code', label: '编号', type: 'text', value: x.code || '' },
+ { key: 'category', label: '类别', type: 'select', value: x.category || '', options: OptionController.getOptions('patternCategory'), allowAddKey: 'patternCategory' },
+ { key: 'link', label: '链接', type: 'text', value: x.link || '' },
+ { key: 'note', label: '备注', type: 'textarea', value: x.note || '' }
+ ];
+ }
+ DetailModal.open({
+ title: p.name || '纸样详情',
+ image: { value: p.image, editable: true, onChange: function(ref) { Store.update(Store.KEYS.PATTERNS, id, { image: ref }); self.renderList(); } },
+ fields: buildFields(),
+ rebuild: buildFields,
+ onSave: function(key, value) {
+ if (key === 'name' && !String(value).trim()) { return '名称不能为空'; }
+ var patch = {}; patch[key] = value;
+ Store.update(Store.KEYS.PATTERNS, id, patch);
+ if (key === 'name') { var t = document.getElementById('detailModalTitle'); if (t) { t.textContent = value; } }
+ self.renderList();
+ return null;
+ }
+ });
+ },
+
  renderList() {
  var self = this;
  var patterns = Store.getAll(Store.KEYS.PATTERNS);
@@ -220,15 +253,15 @@ const PatternController = {
  container.className = 'fabric-list';
  var html = '';
  patterns.forEach(function(p) {
- html += '<div class="fabric-card" style="border-top:none;">';
+ html += '<div class="fabric-card" style="border-top:none;" onclick="PatternController.openDetail(\'' + p.id + '\')" title="点击查看/编辑">';
  /* 图片区域 */
  if (p.image) { html += '<img id="ptimg_' + p.id + '" class="fabric-card-image" alt="">'; }
  else { html += '<div class="fabric-card-image-placeholder" style="background:linear-gradient(135deg,#E0F0ED,#ECF5F3);"></div>'; }
  /* 信息区域 */
  html += '<div class="fabric-card-info">';
  html += '<div class="fabric-card-header"><span class="fabric-card-name">' + self.escapeHtml(p.name) + '</span>';
- html += '<div class="fabric-card-actions"><button class="btn btn-icon" style="color:var(--teal)" onclick="PatternController.openForm(\'' + p.id + '\')" title="编辑">' + svgIcon('edit') + '</button>';
- html += '<button class="btn btn-icon btn-danger" onclick="PatternController.deletePattern(\'' + p.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
+ html += '<div class="fabric-card-actions">';
+ html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();PatternController.deletePattern(\'' + p.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
  html += '<div class="fabric-card-body">';
  if (p.brand) html += '<div class="fabric-card-row"><span class="fabric-card-label">来源</span><span class="fabric-card-value">' + self.escapeHtml(p.brand) + '</span></div>';
  if (p.code) html += '<div class="fabric-card-row"><span class="fabric-card-label">编号</span><span class="fabric-card-value">' + self.escapeHtml(p.code) + '</span></div>';
