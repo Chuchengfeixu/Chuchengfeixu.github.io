@@ -28,19 +28,40 @@ const Auth = {
 
     // 检查当前会话（异步期间显示等待态、锁住输入）
     this.showChecking('正在检查登录状态，请稍候…');
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) {
-      // 有已存会话：无需输入，提示用户等待即可
-      this.showChecking('检测到已登录账号，正在为你恢复，请稍候…');
-      this.currentUser = session.user;
-      await this.loadProfile();
-      try { await DataLayer.loadFromCloud(); } catch(e) { console.error('数据加载失败:', e); }
-      this.showApp();
-      window.dispatchEvent(new Event('dataReady'));
-    } else {
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        // 有已存会话：无需输入，提示用户等待即可
+        this.showChecking('检测到已登录账号，正在为你恢复，请稍候…');
+        this.currentUser = session.user;
+        // 加载资料 + 云端数据，加超时兜底：网络卡住超过 8s 也强制进应用（用本地数据顶上），避免卡死在等待态
+        try {
+          await this._withTimeout((async () => {
+            await this.loadProfile();
+            await DataLayer.loadFromCloud();
+          })(), 8000);
+        } catch (e) {
+          console.error('数据加载失败/超时:', e);
+        }
+        this.showApp();
+        window.dispatchEvent(new Event('dataReady'));
+      } else {
+        this.showLoginPage();
+      }
+    } catch (e) {
+      // 会话检查本身失败：回退到登录页，至少让用户能手动登录，不卡在等待态
+      console.error('会话检查失败:', e);
       this.showLoginPage();
     }
     this._initialized = true;
+  },
+
+  // Promise 超时竞速：ms 内未完成则 reject，防止网络请求悬挂导致启动卡死
+  _withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, ms); })
+    ]);
   },
 
   // 显示"检查/恢复登录"等待态，并隐藏登录/注册表单（防止自动登录期间误输入）

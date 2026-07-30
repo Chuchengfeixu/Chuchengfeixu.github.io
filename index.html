@@ -809,6 +809,7 @@ Auth.init().then(function() {
   Logger.log('[启动] AuthUI.init 完成');
 }).catch(function(e) {
   console.error('[启动] Auth init error:', e);
+  try { Auth.showLoginPage(); } catch (err) {}
   AuthUI.init();
 });
 
