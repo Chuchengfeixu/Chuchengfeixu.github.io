@@ -26,9 +26,12 @@ const Auth = {
       }
     });
 
-    // 检查当前会话
+    // 检查当前会话（异步期间显示等待态、锁住输入）
+    this.showChecking('正在检查登录状态，请稍候…');
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
+      // 有已存会话：无需输入，提示用户等待即可
+      this.showChecking('检测到已登录账号，正在为你恢复，请稍候…');
       this.currentUser = session.user;
       await this.loadProfile();
       try { await DataLayer.loadFromCloud(); } catch(e) { console.error('数据加载失败:', e); }
@@ -38,6 +41,18 @@ const Auth = {
       this.showLoginPage();
     }
     this._initialized = true;
+  },
+
+  // 显示"检查/恢复登录"等待态，并隐藏登录/注册表单（防止自动登录期间误输入）
+  showChecking(message) {
+    var chk = document.getElementById('authChecking');
+    if (chk) chk.style.display = '';
+    var txt = document.getElementById('authCheckingText');
+    if (txt && message) txt.textContent = message;
+    var lf = document.getElementById('loginForm');
+    var rf = document.getElementById('registerForm');
+    if (lf) lf.style.display = 'none';
+    if (rf) rf.style.display = 'none';
   },
 
   async loadProfile() {
@@ -64,6 +79,15 @@ const Auth = {
   showLoginPage() {
     document.getElementById('authPage').style.display = '';
     document.getElementById('appMain').style.display = 'none';
+    // 无会话/已登出：隐藏等待态，显示登录表单供输入
+    var chk = document.getElementById('authChecking');
+    if (chk) chk.style.display = 'none';
+    var lf = document.getElementById('loginForm');
+    var rf = document.getElementById('registerForm');
+    if (lf) lf.style.display = 'block';
+    if (rf) rf.style.display = 'none';
+    var title = document.getElementById('authTitle');
+    if (title) title.textContent = '登录';
   },
 
   showApp() {

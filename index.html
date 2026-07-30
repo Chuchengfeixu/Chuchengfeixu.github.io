@@ -41,8 +41,14 @@
  <h1 class="auth-title" id="authTitle">登录</h1>
  <p class="auth-subtitle">缝纫信息管理系统</p>
 
- <!-- 登录表单 -->
- <form id="loginForm" class="auth-form">
+ <!-- 会话检查等待态（默认显示；确认无登录态后才显示下方表单） -->
+ <div id="authChecking" class="auth-checking">
+ <div class="auth-spinner"></div>
+ <p class="auth-checking-text" id="authCheckingText">正在检查登录状态，请稍候…</p>
+ </div>
+
+ <!-- 登录表单（默认隐藏，无会话时才显示，避免自动登录期间误输入） -->
+ <form id="loginForm" class="auth-form" style="display:none;">
  <div class="auth-form-group">
  <label>邮箱</label>
  <input type="email" id="loginEmail" placeholder="请输入邮箱" required>
