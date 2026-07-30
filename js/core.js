@@ -1085,6 +1085,8 @@ const DetailModal = {
 
   _beginEdit(key, valWrap) {
     var self = this;
+    // 已在编辑同一字段：直接返回，避免点击 select/input 冒泡回来把控件重建（导致下拉秒关）
+    if (this._editingKey === key) { return; }
     if (this._editingKey && this._editingKey !== key) { this._renderFields(); }
     this._editingKey = key;
     var field = this._field(key);
