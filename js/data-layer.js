@@ -118,6 +118,7 @@ function fromDB(table, row) {
     r.image = row.image_url || '';
     r.quantity = row.quantity || 1;
     r.fabricUsages = [];
+    r.notionUsages = [];
   } else if (table === 'todos') {
     r.name = row.name || '';
     r.note = row.note || '';
@@ -213,6 +214,12 @@ function syncToCloud(action, table, id, data) {
       });
       runSync('add', 'products', getDB().from('product_fabrics').insert(rows));
     }
+    if (table === 'products' && data.notionUsages && data.notionUsages.length > 0) {
+      var nRows = data.notionUsages.map(function(u) {
+        return { product_id: id, notion_id: u.notionId, notion_name: u.notionName || '', quantity_used: parseFloat(u.quantityUsed) || 0, user_id: userId };
+      });
+      runSync('add', 'products', getDB().from('product_notions').insert(nRows));
+    }
   } else if (action === 'update') {
     var dbData = toDB(table, data);
     runSync('update', table, getDB().from(table).update(dbData).eq('id', id));
@@ -226,9 +233,22 @@ function syncToCloud(action, table, id, data) {
         }
       }).catch(function(err) { onSyncFail('update', 'products', (err && err.message) || '网络请求失败'); });
     }
+    if (table === 'products' && data.notionUsages !== undefined) {
+      getDB().from('product_notions').delete().eq('product_id', id).then(function() {
+        if (data.notionUsages && data.notionUsages.length > 0) {
+          var nRows = data.notionUsages.map(function(u) {
+            return { product_id: id, notion_id: u.notionId, notion_name: u.notionName || '', quantity_used: parseFloat(u.quantityUsed) || 0, user_id: getUserId() };
+          });
+          runSync('update', 'products', getDB().from('product_notions').insert(nRows));
+        }
+      }).catch(function(err) { onSyncFail('update', 'products', (err && err.message) || '网络请求失败'); });
+    }
   } else if (action === 'remove') {
     if (table === 'products') {
-      getDB().from('product_fabrics').delete().eq('product_id', id).then(function() {
+      Promise.all([
+        getDB().from('product_fabrics').delete().eq('product_id', id),
+        getDB().from('product_notions').delete().eq('product_id', id)
+      ]).then(function() {
         runSync('remove', table, getDB().from(table).delete().eq('id', id));
       }).catch(function(err) { onSyncFail('remove', table, (err && err.message) || '网络请求失败'); });
     } else {
@@ -248,7 +268,8 @@ async function loadFromCloud() {
       db.from('patterns').select('*').order('created_at', { ascending: false }),
       db.from('notions').select('*').order('created_at', { ascending: false }),
       db.from('product_fabrics').select('*'),
-      db.from('scraps').select('*').order('created_at', { ascending: false })
+      db.from('scraps').select('*').order('created_at', { ascending: false }),
+      db.from('product_notions').select('*')
     ]);
 
     var fabrics = (results[0].data || []).map(function(r) { return fromDB('fabrics', r); });
@@ -258,12 +279,16 @@ async function loadFromCloud() {
     var notions = (results[4].data || []).map(function(r) { return fromDB('notions', r); });
     var pfRows = results[5].data || [];
     var scraps = (results[6].data || []).map(function(r) { return fromDB('scraps', r); });
+    var pnRows = results[7].data || [];
 
-    // 给 products 附上 fabricUsages
+    // 给 products 附上 fabricUsages / notionUsages
     products.forEach(function(p) {
       p.fabricUsages = pfRows
         .filter(function(pf) { return pf.product_id === p.id; })
         .map(function(pf) { return { fabricId: pf.fabric_id, fabricName: pf.fabric_name || '', metersUsed: pf.meters_used }; });
+      p.notionUsages = pnRows
+        .filter(function(pn) { return pn.product_id === p.id; })
+        .map(function(pn) { return { notionId: pn.notion_id, notionName: pn.notion_name || '', quantityUsed: pn.quantity_used }; });
     });
 
     _mem['sewing_fabrics'] = fabrics;
@@ -449,6 +474,14 @@ window.Store = {
               });
             }
           });
+          var pnRows = [];
+          records.forEach(function(p) {
+            if (p.notionUsages && p.notionUsages.length) {
+              p.notionUsages.forEach(function(u) {
+                pnRows.push({ product_id: p.id, notion_id: u.notionId, notion_name: u.notionName || '', quantity_used: parseFloat(u.quantityUsed) || 0, user_id: userId });
+              });
+            }
+          });
           try {
             var pids = records.map(function(p) { return p.id; });
             await db.from('product_fabrics').delete().in('product_id', pids);
@@ -456,7 +489,12 @@ window.Store = {
               var pfRes = await db.from('product_fabrics').insert(pfRows);
               if (pfRes.error) { hadError = true; console.error('[导入product_fabrics]', pfRes.error.message); }
             }
-          } catch (e) { hadError = true; console.error('[导入product_fabrics异常]', e.message); }
+            await db.from('product_notions').delete().in('product_id', pids);
+            if (pnRows.length) {
+              var pnRes = await db.from('product_notions').insert(pnRows);
+              if (pnRes.error) { hadError = true; console.error('[导入product_notions]', pnRes.error.message); }
+            }
+          } catch (e) { hadError = true; console.error('[导入product关联表异常]', e.message); }
         }
 
         // 兜底写本地，保证刷新前后一致
@@ -512,7 +550,16 @@ function computeCost(product) {
     var used = parseFloat(u.metersUsed) || 0;
     total += unitPrice * used;
   });
-  return { total: Math.round(total * 100) / 100, currency: 'CNY', basis: 'fabric-only' };
+  // 辅料成本：每单位单价 = 辅料总价 / 辅料总数量；缺失/除零均计 0
+  (product.notionUsages || []).forEach(function(u) {
+    var notion = window.Store ? Store.getById('sewing_notions', u.notionId) : null;
+    var totalPrice = (notion && parseFloat(notion.price)) || 0;
+    var totalQty = (notion && parseFloat(notion.quantity)) || 0;
+    var unitPrice = totalQty > 0 ? (totalPrice / totalQty) : 0;
+    var used = parseFloat(u.quantityUsed) || 0;
+    total += unitPrice * used;
+  });
+  return { total: Math.round(total * 100) / 100, currency: 'CNY', basis: 'fabric+notion' };
 }
 window.computeCost = computeCost;   // 暴露给 product-controller 详情浮窗显示成本
 

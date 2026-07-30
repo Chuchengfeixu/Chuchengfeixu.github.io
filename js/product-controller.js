@@ -32,6 +32,9 @@ const ProductController = {
  document.getElementById('btnAddFabricUsage').addEventListener('click', function() {
  self.addFabricUsageRow();
  });
+ document.getElementById('btnAddNotionUsage').addEventListener('click', function() {
+ self.addNotionUsageRow();
+ });
 
  /* 纸样来源类型切换 */
  document.getElementById('productPatternType').addEventListener('change', function() {
@@ -359,6 +362,78 @@ usages.push({ fabricId: fabricId, metersUsed: metersUsed });
 return usages;
 },
 
+addNotionUsageRow(notionId, quantityUsed) {
+var container = document.getElementById('notionUsageRows');
+var notions = Store.getAll(Store.KEYS.NOTIONS);
+
+var row = document.createElement('div');
+row.className = 'fabric-usage-row';
+
+var select = document.createElement('select');
+select.innerHTML = '<option value="">请选择辅料</option>';
+notions.forEach(function(n) {
+var o = document.createElement('option');
+o.value = n.id;
+var label = n.name;
+if (n.category) label += ' (' + n.category + ')';
+if (n.quantity) label += ' [库存' + n.quantity + (n.unit ? n.unit : '') + ']';
+o.textContent = label;
+if (n.id === notionId) { o.selected = true; }
+select.appendChild(o);
+});
+
+var inputRow = document.createElement('div');
+inputRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+
+var input = document.createElement('input');
+input.type = 'number';
+input.placeholder = '用量';
+input.step = '0.01';
+input.min = '0';
+input.style.flex = '1';
+if (quantityUsed) { input.value = quantityUsed; }
+
+var unitLabel = document.createElement('span');
+unitLabel.className = 'fabric-remaining-hint';
+unitLabel.style.display = 'none';
+
+function updateUnit() {
+var nid = select.value;
+var notion = notions.find(function(n) { return n.id === nid; });
+if (!notion) { unitLabel.style.display = 'none'; return; }
+unitLabel.style.display = 'inline-block';
+unitLabel.textContent = notion.unit ? ('单位：' + notion.unit) : '';
+}
+select.addEventListener('change', updateUnit);
+if (notionId) { updateUnit(); }
+
+var removeBtn = document.createElement('button');
+removeBtn.type = 'button';
+removeBtn.className = 'btn-remove-usage';
+removeBtn.textContent = '✕';
+removeBtn.addEventListener('click', function() { row.remove(); });
+
+inputRow.appendChild(input);
+inputRow.appendChild(unitLabel);
+inputRow.appendChild(removeBtn);
+row.appendChild(select);
+row.appendChild(inputRow);
+container.appendChild(row);
+},
+
+getNotionUsages() {
+var rows = document.querySelectorAll('#notionUsageRows .fabric-usage-row');
+var usages = [];
+rows.forEach(function(row) {
+var notionId = row.querySelector('select').value;
+var quantityUsed = parseFloat(row.querySelector('input').value);
+if (notionId && quantityUsed > 0) {
+usages.push({ notionId: notionId, quantityUsed: quantityUsed });
+}
+});
+return usages;
+},
+
 handleImageUpload(e) {
 var self = this;
 var file = e.target.files[0];
@@ -396,6 +471,7 @@ var self = this;
 this.editingId = productId || null;
 this.clearFormErrors();
 document.getElementById('fabricUsageRows').innerHTML = '';
+document.getElementById('notionUsageRows').innerHTML = '';
 
 this.populateCategoryOptions('');
 this.populateUserOptions('');
@@ -456,6 +532,12 @@ if (product.fabricUsages && product.fabricUsages.length > 0) {
 var self = this;
 product.fabricUsages.forEach(function(usage) {
 self.addFabricUsageRow(usage.fabricId, usage.metersUsed);
+});
+}
+if (product.notionUsages && product.notionUsages.length > 0) {
+var self2 = this;
+product.notionUsages.forEach(function(usage) {
+self2.addNotionUsageRow(usage.notionId, usage.quantityUsed);
 });
 }
 } else {
@@ -555,7 +637,8 @@ patternSource: patternType,
 patternCode: '',
 tutorialLink: document.getElementById('productTutorialLink').value.trim(),
 image: this.imageKey || this.imageBase64,
-fabricUsages: this.getFabricUsages()
+fabricUsages: this.getFabricUsages(),
+notionUsages: this.getNotionUsages()
 };
 
 var result = Validator.validateProduct(data);
@@ -610,7 +693,8 @@ patternId: data.patternId,
 patternSource: data.patternSource,
 patternCode: data.patternCode,
 tutorialLink: data.tutorialLink,
-fabricUsages: data.fabricUsages
+fabricUsages: data.fabricUsages,
+notionUsages: data.notionUsages
 });
 var origSnap = this._duplicateSnapshot || '';
 /* 比较时忽略完成日期（因为默认会变成今天） */
@@ -638,6 +722,22 @@ break;
 if (!found) { existingUsages.push({ fabricId: u.fabricId, metersUsed: u.metersUsed }); }
 });
 Store.update(Store.KEYS.PRODUCTS, this._duplicateSourceId, { fabricUsages: existingUsages });
+}
+/* 追加辅料用量：同辅料累加数量 */
+if (data.notionUsages && data.notionUsages.length > 0) {
+var existingNotions = origProduct.notionUsages ? JSON.parse(JSON.stringify(origProduct.notionUsages)) : [];
+data.notionUsages.forEach(function(u) {
+var found = false;
+for (var i = 0; i < existingNotions.length; i++) {
+if (existingNotions[i].notionId === u.notionId) {
+existingNotions[i].quantityUsed = Math.round((Number(existingNotions[i].quantityUsed) + Number(u.quantityUsed)) * 100) / 100;
+found = true;
+break;
+}
+}
+if (!found) { existingNotions.push({ notionId: u.notionId, quantityUsed: u.quantityUsed }); }
+});
+Store.update(Store.KEYS.PRODUCTS, this._duplicateSourceId, { notionUsages: existingNotions });
 }
 Toast.show('数量已更新为 ×' + newQty, 'success');
 }
@@ -689,6 +789,11 @@ document.getElementById('productImagePreview').style.display = 'block';
 if (savedData.fabricUsages && savedData.fabricUsages.length > 0) {
 savedData.fabricUsages.forEach(function(usage) {
 self.addFabricUsageRow(usage.fabricId, usage.metersUsed);
+});
+}
+if (savedData.notionUsages && savedData.notionUsages.length > 0) {
+savedData.notionUsages.forEach(function(usage) {
+self.addNotionUsageRow(usage.notionId, usage.quantityUsed);
 });
 }
 }, 100);
@@ -772,7 +877,8 @@ patternId: product.patternId || '',
 patternSource: product.patternSource || '',
 patternCode: product.patternCode || '',
 tutorialLink: product.tutorialLink || '',
-fabricUsages: product.fabricUsages || []
+fabricUsages: product.fabricUsages || [],
+notionUsages: product.notionUsages || []
 });
 this.openForm();
 /* 填充字段 */
@@ -809,6 +915,11 @@ if (data) { self.imageBase64 = data; document.getElementById('productImageThumb'
 if (product.fabricUsages && product.fabricUsages.length > 0) {
 product.fabricUsages.forEach(function(usage) {
 self.addFabricUsageRow(usage.fabricId, usage.metersUsed);
+});
+}
+if (product.notionUsages && product.notionUsages.length > 0) {
+product.notionUsages.forEach(function(usage) {
+self.addNotionUsageRow(usage.notionId, usage.quantityUsed);
 });
 }
 },
@@ -934,6 +1045,12 @@ var pinfo = '';
 if (x.patternId) { var pt = Store.getById(Store.KEYS.PATTERNS, x.patternId); pinfo = pt ? ((pt.name || '') + (pt.code ? ' (' + pt.code + ')' : '')) : ''; }
 else if (x.patternSource || x.patternCode) { pinfo = (x.patternSource || '') + (x.patternCode ? ' ' + x.patternCode : ''); }
 var fu = (x.fabricUsages || []).map(function(u) { return (u.fabricName || '布料') + ' ' + (u.metersUsed || 0) + '米'; }).join('、');
+var nu = (x.notionUsages || []).map(function(u) {
+var nm = u.notionName;
+if (!nm) { var nn = Store.getById('sewing_notions', u.notionId); nm = nn ? nn.name : '辅料'; }
+var unit = ''; var nn2 = Store.getById('sewing_notions', u.notionId); if (nn2 && nn2.unit) { unit = nn2.unit; }
+return nm + ' ' + (u.quantityUsed || 0) + unit;
+}).join('、');
 var cost = window.computeCost ? computeCost(x).total : null;
 return [
 { key: 'name', label: '名称', type: 'text', value: x.name, required: true },
@@ -944,7 +1061,8 @@ return [
 { key: 'tutorialLink', label: '教程链接', type: 'text', value: x.tutorialLink || '' },
 { key: '__pattern', label: '纸样', type: 'readonly', value: pinfo, format: function(v) { return v || '—'; } },
 { key: '__fabrics', label: '布料用量', type: 'readonly', value: fu, format: function(v) { return v || '—'; } },
-{ key: '__cost', label: '成本', type: 'readonly', value: (cost != null ? '¥' + cost : ''), format: function(v) { return v || '—'; } }
+{ key: '__notions', label: '辅料用量', type: 'readonly', value: nu, format: function(v) { return v || '—'; } },
+{ key: '__cost', label: '成本(布料+辅料)', type: 'readonly', value: (cost != null ? '¥' + cost : ''), format: function(v) { return v || '—'; } }
 ];
 }
 DetailModal.open({
