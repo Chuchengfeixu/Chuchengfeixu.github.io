@@ -1,4 +1,4 @@
-var CACHE_NAME = 'sewing-v7';
+var CACHE_NAME = 'sewing-v8';
 var URLS_TO_CACHE = [
   './',
   './index.html',

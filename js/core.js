@@ -756,16 +756,10 @@ const Paywall = {
  会先调后端 RPC 原子校验并计数：允许则执行 onAllowed；免费超额弹 Paywall；网络异常提示重试。
  导入/迁移等系统写图不走此守卫，不占配额。 */
 function guardImageUpload(onAllowed) {
- if (!window.QuotaService) { onAllowed(); return; }
- QuotaService.checkAndIncrement().then(function(r) {
- if (r && r.allowed) {
+ // 图片月配额限制已取消（付费模型重构中，成长期优先扩大免费用户基数）。
+ // 后端 image_usage_monthly 表与 check_and_increment_image_quota RPC 暂保留不动，
+ // 以后若改用其它 Pro 模型可复用；如需彻底移除再单独清理。
  onAllowed();
- } else if (r && r.reason === 'quota_exceeded') {
- if (window.Paywall) Paywall.show('image-quota');
- } else {
- if (window.Toast) Toast.show('无法校验图片额度，请稍后重试', 'error');
- }
- });
 }
 
 /* ========== Router 模块 ========== */

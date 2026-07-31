@@ -133,13 +133,7 @@ const Auth = {
       <div class="sidebar-user-tier">${tierLabel}</div>
       <div class="sidebar-user-quota" id="sidebarUserQuota" style="font-size:11px;color:var(--text-light);margin-top:2px;"></div>
     `;
-    // 免费用户展示本月图片配额（需求 16 / 8.5）
-    if (!isPro && window.QuotaService) {
-      QuotaService.getUsageStatus().then(function(s) {
-        var q = document.getElementById('sidebarUserQuota');
-        if (q && s && s.limit > 0) { q.textContent = '本月图片 ' + s.used + ' / ' + s.limit; }
-      });
-    }
+    // 图片月配额已取消，不再展示"本月图片 X/20"（避免误导）
   },
 
   // 注册
