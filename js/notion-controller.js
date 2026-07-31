@@ -219,14 +219,16 @@ const NotionController = {
  function buildFields() {
  var x = Store.getById(Store.KEYS.NOTIONS, id);
  if (!x) { return []; }
+ var remQ = Calculator.remainingQuantity(id, x.quantity, Store.getAll(Store.KEYS.PRODUCTS));
  return [
  { key: 'name', label: '名称', type: 'text', value: x.name, required: true },
  { key: 'category', label: '类别', type: 'select', value: x.category || '', options: OptionController.getOptions('notionCategory'), allowAddKey: 'notionCategory' },
  { key: 'shop', label: '店铺', type: 'select', value: x.shop || '', options: OptionController.getOptions('notionShop'), allowAddKey: 'notionShop' },
- { key: 'quantity', label: '数量', type: 'number', value: x.quantity },
+ { key: 'quantity', label: '库存数量', type: 'number', value: x.quantity },
  { key: 'unit', label: '单位', type: 'select', value: x.unit || '', options: OptionController.getOptions('notionUnit'), allowAddKey: 'notionUnit' },
  { key: 'price', label: '价格', type: 'number', value: x.price, prefix: '¥' },
- { key: 'purchaseDate', label: '购买日期', type: 'date', value: x.purchaseDate || '' }
+ { key: 'purchaseDate', label: '购买日期', type: 'date', value: x.purchaseDate || '' },
+ { key: '__remaining', label: '剩余', type: 'readonly', value: remQ + ' / ' + (x.quantity || 0) + (x.unit ? ' ' + x.unit : '') }
  ];
  }
  DetailModal.open({
@@ -248,6 +250,7 @@ const NotionController = {
  renderList() {
  var self = this;
  var notions = Store.getAll(Store.KEYS.NOTIONS);
+ var products = Store.getAll(Store.KEYS.PRODUCTS);
  var container = document.getElementById('notionList');
  var mode = ViewToggle.getMode('notion');
 
@@ -270,7 +273,8 @@ const NotionController = {
  html += '<span class="lt-col lt-col-name">' + self.escapeHtml(n.name) + '</span>';
  html += '<span class="lt-col lt-col-category">' + self.escapeHtml(n.category || '-') + '</span>';
  html += '<span class="lt-col lt-col-shop">' + self.escapeHtml(n.shop || '-') + '</span>';
- html += '<span class="lt-col lt-col-meters">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span>';
+ var remQ = Calculator.remainingQuantity(n.id, n.quantity, products);
+ html += '<span class="lt-col lt-col-meters" style="color:' + (remQ <= 0 ? 'var(--coral)' : 'inherit') + '">' + remQ + ' / ' + (n.quantity || 0) + (n.unit ? ' ' + n.unit : '') + '</span>';
  html += '<span class="lt-col lt-col-price">¥' + n.price + '</span>';
  html += '<span class="lt-col lt-col-date">' + self.escapeHtml(n.purchaseDate || '-') + '</span>';
  html += '<span class="lt-col lt-col-actions"><button class="btn btn-icon" style="color:var(--green-dark)" onclick="NotionController.addQuantity(\'' + n.id + '\')" title="追加数量">' + svgIcon('plus') + '</button> <button class="btn btn-icon" style="color:var(--amber)" onclick="NotionController.openForm(\'' + n.id + '\')" title="编辑">' + svgIcon('edit') + '</button> <button class="btn btn-icon btn-danger" onclick="NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></span>';
@@ -294,7 +298,8 @@ const NotionController = {
  html += '<button class="btn btn-icon btn-danger" onclick="event.stopPropagation();NotionController.deleteNotion(\'' + n.id + '\')" title="删除">' + svgIcon('trash') + '</button></div></div>';
  html += '<div class="fabric-card-body">';
  if (n.category) html += '<div class="fabric-card-row"><span class="fabric-card-label">类别</span><span class="fabric-card-value">' + self.escapeHtml(n.category) + '</span></div>';
- html += '<div class="fabric-card-row"><span class="fabric-card-label">数量</span><span class="fabric-card-value">' + (n.quantity || '-') + (n.unit ? ' ' + n.unit : '') + '</span></div>';
+ var remQ = Calculator.remainingQuantity(n.id, n.quantity, products);
+ html += '<div class="fabric-card-row"><span class="fabric-card-label">剩余</span><span class="fabric-card-value" style="color:' + (remQ <= 0 ? 'var(--coral)' : 'var(--green-dark)') + '">' + remQ + ' / ' + (n.quantity || 0) + (n.unit ? ' ' + n.unit : '') + '</span></div>';
  html += '<div class="fabric-card-row"><span class="fabric-card-label">价格</span><span class="fabric-card-value">¥' + n.price + '</span></div>';
  html += '</div>';
  html += '</div></div>';

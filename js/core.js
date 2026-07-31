@@ -420,6 +420,21 @@ const Calculator = {
  return Math.round((purchasedMeters - used) * 100) / 100;
  },
 
+ // 辅料剩余数量 = 库存数量 − 各制品消耗合计（与 remainingMeters 同思路，无报废概念）
+ remainingQuantity(notionId, stockQuantity, products) {
+ var used = 0;
+ (products || []).forEach(function(product) {
+ if (product.notionUsages && Array.isArray(product.notionUsages)) {
+ product.notionUsages.forEach(function(usage) {
+ if (usage.notionId === notionId) {
+ used += Number(usage.quantityUsed) || 0;
+ }
+ });
+ }
+ });
+ return Math.round(((Number(stockQuantity) || 0) - used) * 100) / 100;
+ },
+
  fabricStats(fabrics, products) {
  var total = fabrics.length;
  var totalSpent = 0;

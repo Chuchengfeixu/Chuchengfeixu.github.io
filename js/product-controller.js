@@ -365,6 +365,7 @@ return usages;
 addNotionUsageRow(notionId, quantityUsed) {
 var container = document.getElementById('notionUsageRows');
 var notions = Store.getAll(Store.KEYS.NOTIONS);
+var products = Store.getAll(Store.KEYS.PRODUCTS);
 
 var row = document.createElement('div');
 row.className = 'fabric-usage-row';
@@ -372,11 +373,12 @@ row.className = 'fabric-usage-row';
 var select = document.createElement('select');
 select.innerHTML = '<option value="">请选择辅料</option>';
 notions.forEach(function(n) {
+var rem = Calculator.remainingQuantity(n.id, n.quantity, products);
 var o = document.createElement('option');
 o.value = n.id;
 var label = n.name;
 if (n.category) label += ' (' + n.category + ')';
-if (n.quantity) label += ' [库存' + n.quantity + (n.unit ? n.unit : '') + ']';
+label += ' [余' + rem + (n.unit ? n.unit : '') + ']';
 o.textContent = label;
 if (n.id === notionId) { o.selected = true; }
 select.appendChild(o);
@@ -401,8 +403,10 @@ function updateUnit() {
 var nid = select.value;
 var notion = notions.find(function(n) { return n.id === nid; });
 if (!notion) { unitLabel.style.display = 'none'; return; }
+var rem = Calculator.remainingQuantity(nid, notion.quantity, products);
 unitLabel.style.display = 'inline-block';
-unitLabel.textContent = notion.unit ? ('单位：' + notion.unit) : '';
+unitLabel.textContent = '剩余 ' + rem + (notion.unit ? ' ' + notion.unit : '');
+unitLabel.className = 'fabric-remaining-hint' + (rem <= 0 ? ' low' : '');
 }
 select.addEventListener('change', updateUnit);
 if (notionId) { updateUnit(); }
